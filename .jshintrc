@@ -1,5 +1,6 @@
 {
     "asi": true,
     "esnext": true,
+    "node": true,
     "experimental": ["asyncawait"]
 }

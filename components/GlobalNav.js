@@ -1,22 +1,22 @@
-'use strict';
+'use strict'
 
-import React from 'react';
+import React from 'react'
 import { connect } from 'react-redux'
-import { browserHistory } from 'react-router';
+import { browserHistory } from 'react-router'
 import { Link } from 'react-router'
 
-import { setUser } from '../reducers/reducer'
+import { setUser } from '../reducer'
 
 
 export class GlobalNav extends React.Component {
   constructor(props) {
-    super(props);
+    super(props)
 
     this.logout = this.logout.bind(this)
   }
 
   render() {
-    let auth;
+    let auth
 
     if (this.props.user !== null) {
       auth = (
@@ -56,52 +56,52 @@ export class GlobalNav extends React.Component {
   }
 
   async logout() {
-    await logout();
-    deleteCookie('session');
-    this.props.setUser(null);
-    browserHistory.push('/');
+    await logout()
+    deleteCookie('session')
+    this.props.setUser(null)
+    browserHistory.push('/')
   }
 }
 
 
 function deleteCookie(key) {
-  let cookieMap = getCookieMap();
-  delete cookieMap[key];
-  setCookies(cookieMap);
+  let cookieMap = getCookieMap()
+  delete cookieMap[key]
+  setCookies(cookieMap)
 }
 
 
 function getCookieMap() {
-  let cookieMap = {};
-  let cookies = document.cookie.split('; ');
+  let cookieMap = {}
+  let cookies = document.cookie.split(' ')
   cookies.forEach(function(cookie) {
-    let [key, value] = cookie.split('=');
+    let [key, value] = cookie.split('=')
     cookieMap[key] = value
-  });
-  return cookieMap;
+  })
+  return cookieMap
 }
 
 
 function setCookies(cookieMap) {
-  let cookies = '';
+  let cookies = ''
   for (let key in cookieMap) {
     if (cookieMap.hasOwnProperty(key)) {
-      let value = cookieMap[key];
-      cookies += key + '=' + value + "; "
+      let value = cookieMap[key]
+      cookies += key + '=' + value + " "
     }
   }
 }
 
 
 const mapStateToProps = (state) => {
-  let userID = state.userID;
-  let user = state.user;
+  let userID = state.userID
+  let user = state.user
 
   return {
     userID,
     user
   }
-};
+}
 
 
 const mapDispatchToProps = (dispatch) => {
@@ -110,7 +110,7 @@ const mapDispatchToProps = (dispatch) => {
       dispatch(setUser(user))
     }
   }
-};
+}
 
 
 export default connect(
