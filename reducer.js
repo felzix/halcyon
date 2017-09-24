@@ -21,7 +21,7 @@ export default (state, action) => {
       ...state,
       history: [
         ...state.history,
-        { action.command, action.result }
+        { command: action.command, result: action.result }
       ]
     }
     default: return state

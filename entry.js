@@ -3,9 +3,9 @@
 import 'babel-polyfill'  // necessary for await/async to work
 import React from 'react'
 import ReactDOM from 'react-dom'
-import AppRoutes from './components/AppRoutes'
+import IndexPage from './IndexPage'
 
 
 window.onload = () => {
-    ReactDOM.render(<AppRoutes/>, document.getElementById('root'))
+    ReactDOM.render(<IndexPage/>, document.getElementById('root'))
 }

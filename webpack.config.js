@@ -1,7 +1,9 @@
+const path = require('path');
+
 module.exports = {
   entry: './entry',
   output: {
-    path: './bundles',
+    path: path.resolve(__dirname, 'dist'),
     filename: 'bundle.js'
   },
   module: {
@@ -13,11 +15,9 @@ module.exports = {
        loader: 'babel-loader',
        exclude: /node_modules/,
        query: {
-         presets: ['es2015', 'react'],
-         plugins: ["transform-async-to-generator"]
-       }},
-      {test: /\.css$/,
-       loader: 'style-loader!css-loader'}
+         presets: ['es2015', 'react', 'stage-2'],
+         plugins: ['transform-async-to-generator']
+       }}
     ]
   }
 };
