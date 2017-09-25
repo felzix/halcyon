@@ -2,7 +2,7 @@ import React from 'react'
 import { connect, Provider } from 'react-redux'
 
 import store from './store'
-import { pushHistory } from './reducer'
+import { pushHistory, setHistoricalResult } from './reducer'
 
 
 // this wrapper is necessary for Provider to work right
@@ -26,7 +26,7 @@ class App extends React.Component {
   }
 
   render() {
-    console.log(this.props.history)
+    console.log(JSON.stringify(this.props.history))
 
     const history = this.props.history.map((item, index) => {
       return <li key={index}>{item.command}</li>
@@ -36,6 +36,7 @@ class App extends React.Component {
       <div>
         <History history={this.props.history}/>
         <CommandLineInput pushHistory={this.props.pushHistory}
+                          setHistoricalResult={this.props.setHistoricalResult}
                           history={this.props.history}/>
       </div>)
   }
@@ -82,8 +83,11 @@ class CommandLineInput extends React.Component {
   handleSubmit(event) {
     const command = this.state.value
     if (command !== '') {
-      const result = interpretCommand(command)
-      this.props.pushHistory(command, result)
+      const historicalIndex = this.props.history.length
+      interpretCommand(command).then(result => {
+        this.props.setHistoricalResult(historicalIndex, result)
+      })
+      this.props.pushHistory(command)
       this.setState({ value: '' });
       event.preventDefault();
     }
@@ -119,6 +123,9 @@ App = connect(
     return {
       pushHistory: (command, result) => {
         dispatch(pushHistory(command, result))
+      },
+      setHistoricalResult: (index, result) => {
+        dispatch(setHistoricalResult(index, result))
       }
     }
   }
@@ -126,10 +133,11 @@ App = connect(
 
 
 function interpretCommand(text) {
-  try {
-    return eval(text)
-  } catch(err) {
-    return err.stack
-  }
-
+  return new Promise((resolve) => {
+    try {
+      resolve(eval(text))
+    } catch(err) {
+      resolve(err.stack)
+    }
+  })
 }

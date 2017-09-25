@@ -33,7 +33,7 @@ export default (state, action) => {
         { command: action.command, result: action.result }
       ]
     }
-    case: SET_HISTORICAL_RESULT:
+    case SET_HISTORICAL_RESULT:
       const history = [...state.history]
       history[action.index].result = action.result
       return {
