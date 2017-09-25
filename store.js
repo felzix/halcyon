@@ -4,6 +4,7 @@ import reducer from './reducer'
 
 
 const defaultState = {
+  shellLanguage: 'javascript',
   history: []
 }
 

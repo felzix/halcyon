@@ -22,7 +22,7 @@ export const setHistoricalResult = (index, result) => {
 }
 
 
-// remove when ticket resolves: https://github.com/jshint/jshint/issues/2991
+// remove jshint when ticket resolves: https://github.com/jshint/jshint/issues/2991
 // jshint ignore:start
 export default (state, action) => {
   switch (action.type) {

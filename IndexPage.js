@@ -4,6 +4,7 @@ import { connect, Provider } from 'react-redux'
 import store from './store'
 import { pushHistory, setHistoricalResult } from './reducer'
 import { text } from './results'
+// import lispyscript from 'lispyscript'  // TODO this doesn't work
 
 
 // this wrapper is necessary for Provider to work right
@@ -34,9 +35,7 @@ class App extends React.Component {
     return (
       <div>
         <History history={this.props.history}/>
-        <CommandLineInput pushHistory={this.props.pushHistory}
-                          setHistoricalResult={this.props.setHistoricalResult}
-                          history={this.props.history}/>
+        <CommandLineInput/>
       </div>)
   }
 }
@@ -114,12 +113,12 @@ class CommandLineInput extends React.Component {
 }
 
 App = connect(
-  (state) => {
+  state => {
     return {
       history: state.history
     }
   },
-  (dispatch) => {
+  dispatch => {
     return {
       pushHistory: (command, result) => {
         dispatch(pushHistory(command, result))
@@ -131,11 +130,40 @@ App = connect(
   }
 )(App)
 
+History = connect(
+  state => {
+    return {
+      history: state.history
+    }
+  },
+  dispatch => {
+    return {}
+  }
+)(History)
 
+CommandLineInput = connect(
+  state => {
+    return {
+      history: state.history
+    }
+  },
+  dispatch => {
+    return {
+      pushHistory: (command, result) => {
+        dispatch(pushHistory(command, result))
+      },
+      setHistoricalResult: (index, result) => {
+        dispatch(setHistoricalResult(index, result))
+      }
+    }
+  }
+)(CommandLineInput)
+
+const globalEval = eval  // this magically moves eval's scope to be global
 function interpretCommand(command) {
   return new Promise((resolve) => {
     try {
-      resolve(text(eval(command)))
+      resolve(text(globalEval(command)))
     } catch(err) {
       resolve(text(err.stack, 'red'))
     }
