@@ -34,7 +34,7 @@ class App extends React.Component {
 
     return (
       <div>
-        <History history={this.props.history}/>
+        <History/>
         <CommandLineInput/>
       </div>)
   }
