@@ -3,6 +3,7 @@ import { connect, Provider } from 'react-redux'
 
 import store from './store'
 import { pushHistory, setHistoricalResult } from './reducer'
+import { text } from './results'
 
 
 // this wrapper is necessary for Provider to work right
@@ -26,8 +27,6 @@ class App extends React.Component {
   }
 
   render() {
-    console.log(JSON.stringify(this.props.history))
-
     const history = this.props.history.map((item, index) => {
       return <li key={index}>{item.command}</li>
     })
@@ -48,17 +47,15 @@ class History extends React.Component {
   }
 
   render() {
-    const history = this.props.history.map((item, index) => {
-      const command = typeof item.command === 'object' ? JSON.stringify(item.command) : item.command
-      const result =  typeof item.result === 'object' ? JSON.stringify(item.result) : item.result
-      return <li key={index}>{command} -> {result}</li>
-    })
-
     return (
       <div style={{ height: window.innerHeight - 100,
                     overflowY: "auto"}}
            ref={div => { this.container = div }}>
-        <ol>{history}</ol>
+        <ol>
+          {this.props.history.map((item, index) => {
+            return <li key={index}>{item.command} {item.result}</li>
+          })}
+        </ol>
       </div>)
   }
 }
@@ -87,7 +84,8 @@ class CommandLineInput extends React.Component {
       interpretCommand(command).then(result => {
         this.props.setHistoricalResult(historicalIndex, result)
       }).catch(seriousErr => {
-        this.props.setHistoricalResult(historicalIndex, 'ERROR see dev console for details')
+        console.error(seriousErr)
+        this.props.setHistoricalResult(historicalIndex, text('ERROR see dev console for details', 'red'))
       })
       this.props.pushHistory(command)
       this.setState({ value: '' });
@@ -134,12 +132,12 @@ App = connect(
 )(App)
 
 
-function interpretCommand(text) {
+function interpretCommand(command) {
   return new Promise((resolve) => {
     try {
-      resolve(eval(text))
+      resolve(text(eval(command)))
     } catch(err) {
-      resolve(err.stack)
+      resolve(text(err.stack, 'red'))
     }
   })
 }
