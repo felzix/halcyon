@@ -86,6 +86,8 @@ class CommandLineInput extends React.Component {
       const historicalIndex = this.props.history.length
       interpretCommand(command).then(result => {
         this.props.setHistoricalResult(historicalIndex, result)
+      }).catch(seriousErr => {
+        this.props.setHistoricalResult(historicalIndex, 'ERROR see dev console for details')
       })
       this.props.pushHistory(command)
       this.setState({ value: '' });
