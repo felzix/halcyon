@@ -2,12 +2,21 @@ const objectAssign = require('object-assign')
 
 
 export const PUSH_HISTORY = 'PUSH_HISTORY'
+export const SET_HISTORICAL_RESULT = 'SET_HISTORICAL_RESULT'
 
 
 export const pushHistory = (command, result) => {
   return {
     type: PUSH_HISTORY,
     command,
+    result
+  }
+}
+
+export const setHistoricalResult = (index, result) => {
+  return {
+    type: SET_HISTORICAL_RESULT,
+    index,
     result
   }
 }
@@ -24,6 +33,13 @@ export default (state, action) => {
         { command: action.command, result: action.result }
       ]
     }
+    case: SET_HISTORICAL_RESULT:
+      const history = [...state.history]
+      history[action.index].result = action.result
+      return {
+        ...state,
+        history: history
+      }
     default: return state
   }
 }
