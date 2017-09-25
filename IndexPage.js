@@ -12,7 +12,7 @@ export default class IndexPage extends React.Component {
   render() {
     return (
       <Provider store={store}>
-        <App></App>
+        <App/>
       </Provider>
     )
   }
