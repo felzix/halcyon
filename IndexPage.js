@@ -35,7 +35,8 @@ class App extends React.Component {
     return (
       <div>
         <History history={this.props.history}/>
-        <CommandLineInput pushHistory={this.props.pushHistory}/>
+        <CommandLineInput pushHistory={this.props.pushHistory}
+                          history={this.props.history}/>
       </div>)
   }
 }
@@ -47,7 +48,9 @@ class History extends React.Component {
 
   render() {
     const history = this.props.history.map((item, index) => {
-      return <li key={index}>{item.command}</li>
+      const command = typeof item.command === 'object' ? JSON.stringify(item.command) : item.command
+      const result =  typeof item.result === 'object' ? JSON.stringify(item.result) : item.result
+      return <li key={index}>{command} -> {result}</li>
     })
 
     return (
@@ -77,9 +80,11 @@ class CommandLineInput extends React.Component {
   }
 
   handleSubmit(event) {
-    if (this.state.value !== '') {
+    const command = this.state.value
+    if (command !== '') {
+      const result = interpretCommand(command)
+      this.props.pushHistory(command, result)
       this.setState({ value: '' });
-      this.props.pushHistory(this.state.value)
       event.preventDefault();
     }
   }
@@ -88,16 +93,16 @@ class CommandLineInput extends React.Component {
     return (
       <form onSubmit={this.handleSubmit}
             style={{ bottom: "0px",
+                     width: "100%",
                      padding: "15px",
                      display: "block"}}>
         <label>
           > {' '}
           <input type="text"
+                 style={{width: "90%"}}
                  value={this.state.value}
                  onChange={this.handleChange}
-                 ref={input => { this.inputElement = input }}
-                  />
-                { window.innerHeight }
+                 ref={input => { this.inputElement = input }}/>
         </label>
       </form>
     );
@@ -118,3 +123,13 @@ App = connect(
     }
   }
 )(App)
+
+
+function interpretCommand(text) {
+  try {
+    return eval(text)
+  } catch(err) {
+    return err.stack
+  }
+
+}
