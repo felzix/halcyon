@@ -4,7 +4,7 @@
   "description": "Web terminal",
   "main": "entry.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "ava"
   },
   "author": "Robert E. Davidson III",
   "license": "ISC",
@@ -27,5 +27,15 @@
     "redux": "^3.7.2",
     "uuid": "^3.1.0",
     "webpack": "^3.6.0"
+  },
+  "devDependencies": {
+    "ava": "^0.22.0"
+  },
+  "babel": {
+    "presets": ["es2015", "react", "stage-2"],
+    "plugins": ["transform-async-to-generator"]
+  },
+  "ava": {
+    "require": [ "babel-register" ]
   }
 }
