@@ -2,9 +2,8 @@ import React from 'react'
 import { connect, Provider } from 'react-redux'
 
 import store from './store'
-import { pushHistory, setHistoricalResult } from './reducer'
-import { text } from './results'
-// import lispyscript from 'lispyscript'  // TODO this doesn't work
+import { pushHistory, setHistoricalResult, recordPageHeight } from './reducer'
+import { text, uploadConfig } from './results'
 
 
 // this wrapper is necessary for Provider to work right
@@ -24,16 +23,13 @@ class App extends React.Component {
   }
 
   handleResize() {
-    this.forceUpdate()
+    this.props.recordPageHeight(window.innerHeight)
   }
 
   render() {
-    const history = this.props.history.map((item, index) => {
-      return <li key={index}>{item.command}</li>
-    })
-
     return (
       <div>
+        <Topbar/>
         <History/>
         <CommandLineInput/>
       </div>)
@@ -52,7 +48,7 @@ class History extends React.Component {
            ref={div => { this.container = div }}>
         <ol>
           {this.props.history.map((item, index) => {
-            return <li key={index}>{item.command} {item.result}</li>
+            return <li key={`history-${index}`}>{item.command} {item.result}</li>
           })}
         </ol>
       </div>)
@@ -79,17 +75,22 @@ class CommandLineInput extends React.Component {
   handleSubmit(event) {
     const command = this.state.value
     if (command !== '') {
-      const historicalIndex = this.props.history.length
-      interpretCommand(command).then(result => {
-        this.props.setHistoricalResult(historicalIndex, result)
-      }).catch(seriousErr => {
-        console.error(seriousErr)
-        this.props.setHistoricalResult(historicalIndex, text('ERROR see dev console for details', 'red'))
-      })
-      this.props.pushHistory(command)
-      this.setState({ value: '' });
-      event.preventDefault();
+      this.recordCommand(command)
+      this.setState({ value: '' })
     }
+    event.preventDefault();
+  }
+
+  recordCommand(command) {
+    const historicalIndex = this.props.history.length
+    interpretCommand(command).then(result => {
+      this.props.setHistoricalResult(historicalIndex, result)
+    }).catch(seriousErr => {
+      console.error(seriousErr)
+      this.props.setHistoricalResult(
+        historicalIndex, text('ERROR see dev console for details', 'red'))
+    })
+    this.props.pushHistory(command)
   }
 
   render() {
@@ -112,6 +113,25 @@ class CommandLineInput extends React.Component {
   }
 }
 
+class Topbar extends React.Component {
+  render() {
+    return (
+      <span>
+        <UploadConfigButton/>
+      </span>
+    )
+  }
+}
+
+class UploadConfigButton extends React.Component {
+  render() {
+    return (
+      <button id="upload-config-button">Upload Config</button>
+    )
+  }
+}
+
+
 App = connect(
   state => {
     return {
@@ -125,21 +145,23 @@ App = connect(
       },
       setHistoricalResult: (index, result) => {
         dispatch(setHistoricalResult(index, result))
+      },
+      recordPageHeight: height => {
+        dispatch(recordPageHeight(height))
       }
     }
-  }
-)(App)
+  })(App)
 
 History = connect(
   state => {
     return {
-      history: state.history
+      history: state.history,
+      pageHeight: state.pageHeight
     }
   },
   dispatch => {
     return {}
-  }
-)(History)
+  })(History)
 
 CommandLineInput = connect(
   state => {
@@ -156,16 +178,21 @@ CommandLineInput = connect(
         dispatch(setHistoricalResult(index, result))
       }
     }
-  }
-)(CommandLineInput)
+  })(CommandLineInput)
 
-const globalEval = eval  // this magically moves eval's scope to be global
+const globalEval = eval  // this magically makes eval's scope global
 function interpretCommand(command) {
-  return new Promise((resolve) => {
-    try {
-      resolve(text(globalEval(command)))
-    } catch(err) {
-      resolve(text(err.stack, 'red'))
+  return new Promise(resolve => {
+    switch(command) {
+      case "config":
+        resolve(uploadConfig())
+        break
+      default:
+        try {
+          resolve(text(globalEval(command)))
+        } catch(err) {
+          resolve(text(err.stack, 'red'))
+        }
     }
   })
 }
