@@ -20,6 +20,7 @@
     "jquery": "^3.2.1",
     "json-loader": "^0.5.7",
     "lispyscript": "^1.0.1",
+    "pegjs": "^0.10.0",
     "react": "^15.6.1",
     "react-bootstrap": "^0.31.3",
     "react-dom": "^15.6.1",
@@ -32,10 +33,18 @@
     "ava": "^0.22.0"
   },
   "babel": {
-    "presets": ["es2015", "react", "stage-2"],
-    "plugins": ["transform-async-to-generator"]
+    "presets": [
+      "es2015",
+      "react",
+      "stage-2"
+    ],
+    "plugins": [
+      "transform-async-to-generator"
+    ]
   },
   "ava": {
-    "require": [ "babel-register" ]
+    "require": [
+      "babel-register"
+    ]
   }
 }
