@@ -118,19 +118,12 @@ class Topbar extends React.Component {
   render() {
     return (
       <span>
-        <UploadConfigButton/>
+        <div/>
       </span>
     )
   }
 }
 
-class UploadConfigButton extends React.Component {
-  render() {
-    return (
-      <button id="upload-config-button">Upload Config</button>
-    )
-  }
-}
 
 
 App = connect(
