@@ -4,11 +4,13 @@ import { setConfig } from './reducer'
 
 
 export function text(string, color) {
-  string = JSON.stringify(string)
+  if (typeof string === 'object') {
+    string = JSON.stringify(string)
+  }
   let style = {}
   if (typeof color !== 'undefined') style.color = color
   return (
-    <div style={style}>{string}</div>
+    <pre style={style}>{string}</pre>
   )
 }
 

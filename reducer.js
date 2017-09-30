@@ -41,7 +41,6 @@ export const setConfig = (config) => {
 // remove jshint when ticket resolves: https://github.com/jshint/jshint/issues/2991
 // jshint ignore:start
 export default (state, action) => {
-  console.log(state)
   switch (action.type) {
     case PUSH_HISTORY: return {
       ...state,

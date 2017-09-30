@@ -4,6 +4,7 @@ import { connect, Provider } from 'react-redux'
 import store from './store'
 import { pushHistory, setHistoricalResult, recordPageHeight } from './reducer'
 import { text, uploadConfig } from './results'
+import { HELPTEXT } from './constants'
 
 
 // this wrapper is necessary for Provider to work right
@@ -48,7 +49,7 @@ class History extends React.Component {
            ref={div => { this.container = div }}>
         <ol>
           {this.props.history.map((item, index) => {
-            return <li key={`history-${index}`}>{item.command} {item.result}</li>
+            return <li key={`history-${index}`}><pre>{item.command}</pre> {item.result}</li>
           })}
         </ol>
       </div>)
@@ -184,12 +185,16 @@ const globalEval = eval  // this magically makes eval's scope global
 function interpretCommand(command) {
   return new Promise(resolve => {
     switch(command) {
+      case "help":
+        resolve(text(HELPTEXT))
+        break
       case "config":
         resolve(uploadConfig())
         break
       default:
+        const wrappedCommand = `(function() {return ${command}})()`
         try {
-          resolve(text(globalEval(command)))
+          resolve(text(globalEval(wrappedCommand)))
         } catch(err) {
           resolve(text(err.stack, 'red'))
         }
