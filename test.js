@@ -25,9 +25,9 @@ test('lisp-parser :: symbol', t => {
 })
 
 test('lisp-parser :: addition', t => {
-  const result = parse('(+ 3 4 5)')
+  const result = parse('(+ 3 4 5 6)')
   console.log(result)
-  t.is(result, 12)
+  t.is(result, 18)
 })
 
 test('lisp-parser :: square root', t => {

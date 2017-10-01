@@ -5,6 +5,7 @@ import store from './store'
 import { pushHistory, setHistoricalResult, recordPageHeight } from './reducer'
 import { text, uploadConfig } from './results'
 import { HELPTEXT } from './constants'
+import lispParser from './lisp-parser'
 
 
 // this wrapper is necessary for Provider to work right
@@ -185,12 +186,25 @@ function interpretCommand(command) {
         resolve(uploadConfig())
         break
       default:
-        const wrappedCommand = `(function() {return ${command}})()`
         try {
-          resolve(text(globalEval(wrappedCommand)))
+          const language = store.getState().shellLanguage
+          switch(language) {
+            case 'javascript': resolve(interpretJavascript(command)); break
+            case 'lisp': resolve(interpretLisp(command)); break
+          }
         } catch(err) {
           resolve(text(err.stack, 'red'))
         }
     }
   })
+}
+
+function interpretLisp(command) {
+  return text(lispParser(command))
+}
+
+
+function interpretJavascript(command) {
+  const wrappedCommand = `(function() {return ${command}})()`
+  return text(globalEval(wrappedCommand))
 }

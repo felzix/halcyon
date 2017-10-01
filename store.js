@@ -4,10 +4,10 @@ import reducer from './reducer'
 
 
 const defaultState = {
-  shellLanguage: 'javascript',
+  shellLanguage: 'lisp',
   history: [],
   pageHeight: 600,  // necessary for redrawing on window resize
-  config: {}  
+  config: {}
 }
 
 const store = createStore(reducer, defaultState)
