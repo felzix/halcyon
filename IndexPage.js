@@ -37,14 +37,14 @@ class App extends React.Component {
     // this.props.cliElement.focus()
     const {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey} = event
     console.log(`all: ${key}`)
-    ReactTestUtils.Simulate.keyUp(this.props.cliElement,
+    ReactTestUtils.Simulate.keyPress(this.props.cliElement,
       {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey})
   }
 
   handleRepeatableKeyboard(event) {
     if (event.key === 'Backspace') {
       const {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey} = event
-      ReactTestUtils.Simulate.keyUp(this.props.cliElement,
+      ReactTestUtils.Simulate.keyPress(this.props.cliElement,
         {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey})
     }
   }
@@ -171,7 +171,7 @@ class CommandLineInput extends React.Component {
           <input type="text"
                  style={{width: "90%"}}
                  value={this.state.value}
-                 onKeyUp={this.handleKeyboard}
+                 onKeyPress={this.handleKeyboard}
                  ref={input => { this.inputElement = input; this.props.setCliElement(input) }}/>
         </label>
       </form>
