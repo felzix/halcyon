@@ -25,7 +25,6 @@ class App extends React.Component {
     window.addEventListener("resize", this.handleResize.bind(this));
     this.handleKeyboard = this.handleKeyboard.bind(this);
     this.handleRepeatableKeyboard = this.handleRepeatableKeyboard.bind(this);
-    this.handleKeyPress = this.handleKeyPress.bind(this);
   }
 
   handleResize() {
@@ -36,7 +35,6 @@ class App extends React.Component {
   handleKeyboard(event) {
     // this.props.cliElement.focus()
     const {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey} = event
-    console.log(`all: ${key}`)
     ReactTestUtils.Simulate.keyPress(this.props.cliElement,
       {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey})
   }
@@ -47,11 +45,6 @@ class App extends React.Component {
       ReactTestUtils.Simulate.keyPress(this.props.cliElement,
         {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey})
     }
-  }
-
-  handleKeyPress(event) {
-    const {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey} = event
-    console.log(`press: ${key}`)
   }
 
   render() {
@@ -106,7 +99,6 @@ class CommandLineInput extends React.Component {
   handleKeyboard(event) {
     event.stopPropagation()
     const {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey} = event
-    console.log(`cli: ${key}`)
     let value = this.state.value
     if (event.key.length > 1) {  // non-printable
       switch (event.key) {
