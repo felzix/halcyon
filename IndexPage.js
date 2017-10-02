@@ -201,14 +201,30 @@ class CommandLineInput extends React.Component {
           event.preventDefault()
           return
         }
-        case 'ArrowLeft':
-          this.cursorLeft()
+        case 'ArrowLeft': {
+          let { cursorStart, cursorEnd } = this.state
+          const { selectionLeft, selectionRight } = this.inputElement
+          cursorStart -= 1
+          cursorStart = cursorStart < 0 ? 0 : cursorStart
+          if (!shiftKey) {
+            cursorEnd = cursorStart
+          }
+          this.setState({ cursorStart, cursorEnd })
           event.preventDefault()
           break
-        case 'ArrowRight':
-          this.cursorRight()
+        }
+        case 'ArrowRight': {
+          let { cursorStart, cursorEnd } = this.state
+          const { selectionLeft, selectionRight, value } = this.inputElement
+          cursorEnd += 1
+          cursorEnd = cursorEnd > value.length ? value.length : cursorEnd
+          if (!shiftKey) {
+            cursorStart = cursorEnd
+          }
+          this.setState({ cursorStart, cursorEnd })
           event.preventDefault()
           break
+        }
         case 'ArrowUp':
           // TODO scroll history
           event.preventDefault()
@@ -262,32 +278,6 @@ class CommandLineInput extends React.Component {
       this.setState({ value: '' })
     }
     event.preventDefault();
-  }
-
-  cursorLeft(count, sync) {
-    count = typeof count === 'undefined' ? 1 : count
-    sync = typeof sync === 'undefined' ? true : false
-    const { cursorStart, cursorEnd } = this.state
-    console.log(`left ${cursorStart} ${this.inputElement.selectionStart}`)
-    if (cursorStart > 0) {
-      this.setState({ cursorStart: cursorStart - count})
-      if (sync) {
-        this.setState({ cursorEnd: cursorEnd - count})
-      }
-    }
-  }
-
-  cursorRight(count, sync) {
-    count = typeof count === 'undefined' ? 1 : count
-    sync = typeof sync === 'undefined' ? true : false
-    const { cursorStart, cursorEnd } = this.state
-    console.log(`right ${cursorEnd} ${this.inputElement.selectionEnd}`)
-    if (cursorEnd < this.inputElement.value.length) {
-      this.setState({ cursorEnd: cursorEnd + count})
-      if (sync) {
-        this.setState({ cursorStart: cursorStart + count})
-      }
-    }
   }
 
   recordCommand(command) {
