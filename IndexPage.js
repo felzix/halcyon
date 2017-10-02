@@ -22,9 +22,10 @@ export default class IndexPage extends React.Component {
 
 class App extends React.Component {
   componentDidMount() {
-    window.addEventListener("resize", this.handleResize.bind(this));
-    this.handleKeyboard = this.handleKeyboard.bind(this);
-    this.handleRepeatableKeyboard = this.handleRepeatableKeyboard.bind(this);
+    window.addEventListener("resize", this.handleResize.bind(this))
+    this.handleKeyboard = this.handleKeyboard.bind(this)
+    this.handleKeyDown = this.handleKeyDown.bind(this)
+    this.handleKeyUp = this.handleKeyUp.bind(this)
   }
 
   handleResize() {
@@ -33,25 +34,35 @@ class App extends React.Component {
 
   // Just send everything to the CLI.
   handleKeyboard(event) {
-    // this.props.cliElement.focus()
-    const {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey} = event
+    event.stopPropagation()  // probably breaks tab behavior
+    this.props.cliElement.focus()
+    const { key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey } = event
     ReactTestUtils.Simulate.keyPress(this.props.cliElement,
-      {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey})
+      { key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey })
   }
 
-  handleRepeatableKeyboard(event) {
-    if (event.key === 'Backspace') {
-      const {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey} = event
-      ReactTestUtils.Simulate.keyPress(this.props.cliElement,
-        {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey})
-    }
+  handleKeyDown(event) {
+    event.stopPropagation()
+    this.props.cliElement.focus()
+    const { key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey } = event
+    ReactTestUtils.Simulate.keyDown(this.props.cliElement,
+      { key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey })
+  }
+
+  handleKeyUp(event) {
+    event.stopPropagation()
+    this.props.cliElement.focus()
+    const { key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey } = event
+    ReactTestUtils.Simulate.keyUp(this.props.cliElement,
+      { key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey })
   }
 
   render() {
     return (
       <div tabIndex="1"
-           onKeyDown={this.handleRepeatableKeyboard}
-           onKeyPress={this.handleKeyboard}>
+           onKeyPress={this.handleKeyboard}
+           onKeyDown={this.handleKeyDown}
+           onKeyUp={this.handleKeyUp}>
         <Topbar/>
         <History/>
         <CommandLineInput/>
@@ -86,6 +97,8 @@ class CommandLineInput extends React.Component {
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleKeyboard = this.handleKeyboard.bind(this);
+    this.handleKeyUp = this.handleKeyUp.bind(this);
+    this.handleKeyDown = this.handleKeyDown.bind(this);
   }
 
   componentDidMount() {
@@ -96,38 +109,69 @@ class CommandLineInput extends React.Component {
     this.setState({ value: event.target.value });
   }
 
+  // Passes along printables. Handles control sequences.
+  handleKeyUp(event) {
+    event.stopPropagation()
+    const {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey} = event
+    const value = this.state.value
+    if (key.length == 1) {  // printable so let the onKeyPress handler deal with it
+      return
+    }
+    // NOTE: Every event here has a match in handleKeyDown so beware duplication
+    switch (key) {
+      case 'Backspace':
+        break  // dealt with in handleKeyDown
+      case 'Delete':
+        // TODO do something based on text cursor position
+        break
+      case 'Tab':
+        break  // nothing to do
+      case 'Control':
+        break  // nothing to do
+      case 'Meta':
+        break  // nothing to do
+      case 'Shift':
+        break  // nothing to do
+      case 'Enter':
+        this.handleSubmit(new Event('submit'))
+        this.setState({ value: '' })
+        break
+      case 'Escape':
+        break  // will probably do something eventually
+      default:
+        console.error(`Unhandled key "${key}"`)
+    }
+  }
+
+  handleKeyDown(event) {
+    event.stopPropagation()
+    const {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey} = event
+    const value = this.state.value
+    if (key.length == 1) {  // printable so let the onKeyPress handler deal with it
+      return
+    }
+    // NOTE: Every event here has a match in handleKeyUp so beware duplication
+    switch (key) {
+      case 'Backspace':
+        // TODO must be based on text cursor position
+        this.setState({ value: this.state.value.slice(0, this.state.value.length - 1) })
+        break
+    }
+  }
+
   handleKeyboard(event) {
     event.stopPropagation()
     const {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey} = event
-    let value = this.state.value
-    if (event.key.length > 1) {  // non-printable
-      switch (event.key) {
-        case 'Backspace':
-          value = value.slice(0, value.length - 1)
-          break
-        case 'Control':
-          break  // nothing to do
-        case 'Meta':
-          break  // nothing to do
-        case 'Shift':
-          break  // nothing to do
-        case 'Enter':
-          this.handleSubmit(new Event('submit'))
-          value = ''
-          break
-        case 'Escape':
-          break  // will probably do something eventually
-        default:
-          console.error(`Unhandled key ""${event.key}""`)
-      }
-    } else {  // printable character
-      if (ctrlKey || altKey || metaKey) {  // control sequence
-        // TODO text-editing commands and user-defined commands
-      } else {  // just the key
-        value += event.key
-      }
+    const value = this.state.value
+    if (key.length > 1) {  // non-printable so let the onKeyUp handler deal with it
+      return
     }
-    this.setState({ value })
+    if (ctrlKey || altKey || metaKey) {  // control sequence
+      return
+    }
+
+    // TODO add the key based on the text cursor position
+    this.setState({ value: value + key })
   }
 
   handleSubmit(event) {
@@ -164,6 +208,8 @@ class CommandLineInput extends React.Component {
                  style={{width: "90%"}}
                  value={this.state.value}
                  onKeyPress={this.handleKeyboard}
+                 onKeyUp={this.handleKeyUp}
+                 onKeyDown={this.handleKeyDown}
                  ref={input => { this.inputElement = input; this.props.setCliElement(input) }}/>
         </label>
       </form>
