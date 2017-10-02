@@ -1,8 +1,9 @@
 import React from 'react'
+import ReactTestUtils from 'react-dom/test-utils'
 import { connect, Provider } from 'react-redux'
 
 import store from './store'
-import { pushHistory, setHistoricalResult, recordPageHeight } from './reducer'
+import { pushHistory, setHistoricalResult, recordPageHeight, setCliElement } from './reducer'
 import { text, uploadConfig } from './results'
 import { HELPTEXT } from './constants'
 import lispParser from './lisp-parser'
@@ -22,15 +23,33 @@ export default class IndexPage extends React.Component {
 class App extends React.Component {
   componentDidMount() {
     window.addEventListener("resize", this.handleResize.bind(this));
+    this.handleKeyboard = this.handleKeyboard.bind(this);
+    this.handleRepeatableKeyboard = this.handleRepeatableKeyboard.bind(this);
   }
 
   handleResize() {
     this.props.recordPageHeight(window.innerHeight)
   }
 
+  // Just send everything to the CLI.
+  handleKeyboard(event) {
+    // this.props.cliElement.focus()
+    const {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey} = event
+    ReactTestUtils.Simulate.keyUp(this.props.cliElement,
+      {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey})
+  }
+
+  handleRepeatableKeyboard(event) {
+    if (event.key === 'Backspace') {
+      const {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey} = event
+      ReactTestUtils.Simulate.keyUp(this.props.cliElement,
+        {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey})
+    }
+  }
+
   render() {
     return (
-      <div>
+      <div tabIndex="1" onKeyUp={this.handleKeyboard} onKeyDown={this.handleRepeatableKeyboard}>
         <Topbar/>
         <History/>
         <CommandLineInput/>
@@ -64,6 +83,7 @@ class CommandLineInput extends React.Component {
 
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
+    this.handleKeyboard = this.handleKeyboard.bind(this);
   }
 
   componentDidMount() {
@@ -72,6 +92,41 @@ class CommandLineInput extends React.Component {
 
   handleChange(event) {
     this.setState({ value: event.target.value });
+  }
+
+  handleKeyboard(event) {
+    event.stopPropagation()
+    const {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey} = event
+    console.log(key)
+    let value = this.state.value
+    if (event.key.length > 1) {  // non-printable
+      switch (event.key) {
+        case 'Backspace':
+          value = value.slice(0, value.length - 1)
+          break
+        case 'Control':
+          break  // nothing to do
+        case 'Meta':
+          break  // nothing to do
+        case 'Shift':
+          break  // nothing to do
+        case 'Enter':
+          this.handleSubmit(new Event('submit'))
+          value = ''
+          break
+        case 'Escape':
+          break  // will probably do something eventually
+        default:
+          console.error(`Unhandled key ""${event.key}""`)
+      }
+    } else {  // printable character
+      if (ctrlKey || shiftKey || altKey || metaKey) {  // control sequence
+        // TODO text-editing commands and user-defined commands
+      } else {  // just the key
+        value += event.key
+      }
+    }
+    this.setState({ value })
   }
 
   handleSubmit(event) {
@@ -107,8 +162,8 @@ class CommandLineInput extends React.Component {
           <input type="text"
                  style={{width: "90%"}}
                  value={this.state.value}
-                 onChange={this.handleChange}
-                 ref={input => { this.inputElement = input }}/>
+                 onKeyUp={this.handleKeyboard}
+                 ref={input => { this.inputElement = input; this.props.setCliElement(input) }}/>
         </label>
       </form>
     );
@@ -126,11 +181,11 @@ class Topbar extends React.Component {
 }
 
 
-
 App = connect(
   state => {
     return {
-      history: state.history
+      history: state.history,
+      cliElement: state.cliElement
     }
   },
   dispatch => {
@@ -171,6 +226,9 @@ CommandLineInput = connect(
       },
       setHistoricalResult: (index, result) => {
         dispatch(setHistoricalResult(index, result))
+      },
+      setCliElement: element => {
+        dispatch(setCliElement(element))
       }
     }
   })(CommandLineInput)

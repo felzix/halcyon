@@ -5,6 +5,7 @@ import reducer from './reducer'
 
 const defaultState = {
   shellLanguage: 'lisp',
+  cliElement: null,
   history: [],
   pageHeight: 600,  // necessary for redrawing on window resize
   config: {}

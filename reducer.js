@@ -5,6 +5,7 @@ export const PUSH_HISTORY = 'PUSH_HISTORY'
 export const SET_HISTORICAL_RESULT = 'SET_HISTORICAL_RESULT'
 export const RECORD_PAGE_HEIGHT = 'RECORD_PAGE_HEIGHT'
 export const SET_CONFIG = 'SET_CONFIG'
+export const SET_CLI_ELEMENT = 'SET_CLI_ELEMENT'
 
 
 export const pushHistory = (command, result) => {
@@ -37,6 +38,13 @@ export const setConfig = (config) => {
   }
 }
 
+export const setCliElement = (element) => {
+  return {
+    type: SET_CLI_ELEMENT,
+    element
+  }
+}
+
 
 // remove jshint when ticket resolves: https://github.com/jshint/jshint/issues/2991
 // jshint ignore:start
@@ -66,6 +74,11 @@ export default (state, action) => {
         ...state,
         config: action.config
       }
+      case SET_CLI_ELEMENT:
+        return {
+          ...state,
+          cliElement: action.element
+        }
     default: return state
   }
 }
