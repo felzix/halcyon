@@ -149,17 +149,12 @@ class CommandLineInput extends React.Component {
     const value = this.state.value
     if (key.length === 1) {  // might just be a printable
       if (ctrlKey || shiftKey || altKey || metaKey) {  // this is a control sequence!
-        if (metaKey){
-          switch (key) {
-            case "a": {  // select all
-              console.log('meta-a ')
-              this.setState({ cursorStart: 0, cursorEnd: this.inputElement.value.length })
-              event.preventDefault()
-              return
-            }
-          }
+        if (key === 'a' && metaKey && !(ctrlKey || shiftKey || altKey)) {  // select all
+            console.log('meta-a')
+            this.setState({ cursorStart: 0, cursorEnd: this.inputElement.value.length })
+            event.preventDefault()
+            return
         }
-        // FUTURE: note that event.preventDefault() prevents ctrl-a and the like
         return
       } else {  // yeah just a printable so let handleKeyboard deal with it
         return
@@ -168,9 +163,14 @@ class CommandLineInput extends React.Component {
       // NOTE: Every event here has a match in handleKeyUp so beware duplication
       switch (key) {
         case 'Backspace': {
+          event.preventDefault()
           const value = this.state.value
           let cursorStart = this.state.cursorStart
           const cursorEnd = this.state.cursorEnd
+
+          if (cursorStart <= 0) {  // can't delete past the beginning of the line
+            return
+          }
 
           if (cursorStart === cursorEnd) {  // if no selection, delete 1 left of cursor
             cursorStart -= 1
@@ -181,13 +181,18 @@ class CommandLineInput extends React.Component {
             cursorStart,
             cursorEnd: cursorStart
           })
-          event.preventDefault()
+
           return
         }
         case 'Delete': {
+          event.preventDefault()
           const value = this.state.value
           const cursorStart = this.state.cursorStart
           let cursorEnd = this.state.cursorEnd
+
+          if (cursorEnd >= value.length) {  // can't delete past the end of the line
+            return
+          }
 
           if (cursorStart === cursorEnd) {  // if no selection, delete 1 right of cursor
             cursorEnd += 1
@@ -198,7 +203,7 @@ class CommandLineInput extends React.Component {
             cursorStart,
             cursorEnd: cursorStart
           })
-          event.preventDefault()
+
           return
         }
         case 'ArrowLeft': {
