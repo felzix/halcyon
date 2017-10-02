@@ -114,49 +114,57 @@ class CommandLineInput extends React.Component {
     event.stopPropagation()
     const {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey} = event
     const value = this.state.value
-    if (key.length == 1) {  // printable so let handleKeyboard deal with it
-      return
-    }
-    // NOTE: Every event here has a match in handleKeyDown so beware duplication
-    switch (key) {
-      case 'Backspace':
-        break  // dealt with in handleKeyDown
-      case 'Delete':
-        // TODO do something based on text cursor position
-        break
-      case 'Tab':
-        break  // nothing to do
-      case 'Control':
-        break  // nothing to do
-      case 'Meta':
-        break  // nothing to do
-      case 'Shift':
-        break  // nothing to do
-      case 'Enter':
-        this.handleSubmit(new Event('submit'))
-        this.setState({ value: '' })
-        break
-      case 'Escape':
-        break  // will probably do something eventually
-      default:
-        console.error(`Unhandled key "${key}"`)
+    console.log(`up ${key} ${ctrlKey}`)
+    if (key.length == 1) {  // might just be a printable
+      if (ctrlKey || shiftKey || altKey || metaKey) {  // this is a control sequence!
+        // see handleKeyDown for what belongs here, if anything every does
+      } else {  // yeah just a printable so let handleKeyboard deal with it
+        return
+      }
+    } else {  // just a control character. note that this happens at the end of sequences too
+      // NOTE: Every event here has a match in handleKeyDown so beware duplication
+      switch (key) {
+        case 'Enter':
+          this.handleSubmit(new Event('submit'))
+          this.setState({ value: '' })
+          break
+      }
     }
   }
 
   // Handles repeatable control characters or control sequences.
   handleKeyDown(event) {
     event.stopPropagation()
+
     const {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey} = event
+    console.log(`down ${key} ${ctrlKey}`)
     const value = this.state.value
-    if (key.length == 1) {  // printable so let handleKeyboard deal with it
-      return
-    }
-    // NOTE: Every event here has a match in handleKeyUp so beware duplication
-    switch (key) {
-      case 'Backspace':
-        // TODO must be based on text cursor position
-        this.setState({ value: this.state.value.slice(0, this.state.value.length - 1) })
-        break
+    if (key.length == 1) {  // might just be a printable
+      if (ctrlKey || shiftKey || altKey || metaKey) {  // this is a control sequence!
+        // FUTURE: note that event.preventDefault() prevents ctrl-a and the like
+      } else {  // yeah just a printable so let handleKeyboard deal with it
+        return
+      }
+    } else {  // just a control character. note that this happens at the end of sequences too
+      // NOTE: Every event here has a match in handleKeyUp so beware duplication
+      switch (key) {
+        case 'Backspace': {
+          let start = this.inputElement.selectionStart
+          const end = this.inputElement.selectionEnd
+          start = start === end ? start - 1 : start  // if no selection, delete 1 left of cursor
+          const value = this.state.value
+          this.setState({ value: value.slice(0, start) + value.slice(end, value.length) })
+          break
+        }
+        case 'Delete': {
+          const start = this.inputElement.selectionStart
+          let end = this.inputElement.selectionEnd
+          end = end === start ? end + 1 : end  // if no selection, delete 1 right of cursor
+          const value = this.state.value
+          this.setState({ value: value.slice(0, start) + value.slice(end, value.length) })
+            break
+        }
+      }
     }
   }
 
@@ -164,6 +172,7 @@ class CommandLineInput extends React.Component {
   handleKeyboard(event) {
     event.stopPropagation()
     const {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey} = event
+    console.log(`press ${key} ${ctrlKey}`)
     const value = this.state.value
     if (key.length > 1) {  // non-printable so let handleKeyUp deal with it
       return
@@ -207,6 +216,7 @@ class CommandLineInput extends React.Component {
         <label>
           > {' '}
           <input type="text"
+                 id="cli-input"
                  style={{width: "90%"}}
                  value={this.state.value}
                  onKeyPress={this.handleKeyboard}
