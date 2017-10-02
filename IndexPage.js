@@ -124,6 +124,7 @@ class CommandLineInput extends React.Component {
     const value = this.state.value
     console.log(`up ${key} ${metaKey}`)
     if (key.length === 1) {  // might just be a printable
+      // TODO are these ever brought here?
       if (ctrlKey || shiftKey || altKey || metaKey) {  // this is a control sequence!
         // see handleKeyDown for what belongs here, if anything every does
         return
@@ -149,11 +150,15 @@ class CommandLineInput extends React.Component {
     const value = this.state.value
     if (key.length === 1) {  // might just be a printable
       if (ctrlKey || shiftKey || altKey || metaKey) {  // this is a control sequence!
+        event.preventDefault()
         if (key === 'a' && metaKey && !(ctrlKey || shiftKey || altKey)) {  // select all
-            console.log('meta-a')
-            this.setState({ cursorStart: 0, cursorEnd: this.inputElement.value.length })
-            event.preventDefault()
-            return
+          this.setState({ cursorStart: 0, cursorEnd: value.length })
+        } else if (key === 'a' && ctrlKey && !(shiftKey || altKey || metaKey)) {  // start of line
+          this.setState({ cursorStart: 0, cursorEnd: 0})
+        } else if (key === 'e' && ctrlKey && !(shiftKey || altKey || metaKey)) {  // end of line
+          this.setState({ cursorStart: value.length, cursorEnd: value.length})
+        }else if (key === 'r' && metaKey && !(shiftKey || altKey || ctrlKey)) {  // reload page
+          window.location.reload()
         }
         return
       } else {  // yeah just a printable so let handleKeyboard deal with it
