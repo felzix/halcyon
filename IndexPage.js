@@ -173,12 +173,12 @@ class CommandLineInput extends React.Component {
           let cursorStart = this.state.cursorStart
           const cursorEnd = this.state.cursorEnd
 
-          if (cursorStart <= 0) {  // can't delete past the beginning of the line
-            return
+          if (cursorStart === cursorEnd) {
+            cursorStart -= 1  // if no selection, delete 1 left of cursor
           }
 
-          if (cursorStart === cursorEnd) {  // if no selection, delete 1 left of cursor
-            cursorStart -= 1
+          if (cursorStart < 0) {  // can't delete past the beginning of the line
+            return
           }
 
           this.setState({
@@ -195,12 +195,12 @@ class CommandLineInput extends React.Component {
           const cursorStart = this.state.cursorStart
           let cursorEnd = this.state.cursorEnd
 
-          if (cursorEnd >= value.length) {  // can't delete past the end of the line
-            return
+          if (cursorStart === cursorEnd) {
+            cursorEnd += 1  // if no selection, delete 1 right of cursor
           }
 
-          if (cursorStart === cursorEnd) {  // if no selection, delete 1 right of cursor
-            cursorEnd += 1
+          if (cursorEnd > value.length) {  // can't delete past the end of the line
+            return
           }
 
           this.setState({
