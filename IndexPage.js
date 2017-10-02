@@ -92,13 +92,19 @@ class History extends React.Component {
 class CommandLineInput extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { value: '', cursorPosition: 0 };
+    this.state = {
+      value: '',
+      cursorStart: 0,
+      cursorEnd: 0
+     }
 
     this.handleSubmit = this.handleSubmit.bind(this);
     this.setInputElement = this.setInputElement.bind(this);
     this.handleKeyboard = this.handleKeyboard.bind(this);
     this.handleKeyUp = this.handleKeyUp.bind(this);
     this.handleKeyDown = this.handleKeyDown.bind(this);
+    this.handleClick = this.handleClick.bind(this);
+    this.handleUnclick = this.handleUnclick.bind(this);
   }
 
   componentDidMount() {
@@ -106,8 +112,9 @@ class CommandLineInput extends React.Component {
   }
 
   componentDidUpdate() {
-    this.inputElement.selectionStart = this.state.cursorPosition
-    this.inputElement.selectionEnd = this.state.cursorPosition
+    this.inputElement.selectionStart = this.state.cursorStart
+    this.inputElement.selectionEnd = this.state.cursorEnd
+    console.log(`pos: ${this.state.cursorStart} : ${this.state.cursorEnd}`)
   }
 
   // Handles non-repeatable control characters or control sequences.
@@ -115,8 +122,8 @@ class CommandLineInput extends React.Component {
     event.stopPropagation()
     const {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey} = event
     const value = this.state.value
-    console.log(`up ${key} ${ctrlKey}`)
-    if (key.length == 1) {  // might just be a printable
+    console.log(`up ${key} ${metaKey}`)
+    if (key.length === 1) {  // might just be a printable
       if (ctrlKey || shiftKey || altKey || metaKey) {  // this is a control sequence!
         // see handleKeyDown for what belongs here, if anything every does
         return
@@ -138,10 +145,20 @@ class CommandLineInput extends React.Component {
   handleKeyDown(event) {
     event.stopPropagation()
     const {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey} = event
-    console.log(`down ${key} ${ctrlKey}`)
+    console.log(`down ${key} ${metaKey}`)
     const value = this.state.value
-    if (key.length == 1) {  // might just be a printable
+    if (key.length === 1) {  // might just be a printable
       if (ctrlKey || shiftKey || altKey || metaKey) {  // this is a control sequence!
+        if (metaKey){
+          switch (key) {
+            case "a": {  // select all
+              console.log('meta-a ')
+              this.setState({ cursorStart: 0, cursorEnd: this.inputElement.value.length })
+              event.preventDefault()
+              return
+            }
+          }
+        }
         // FUTURE: note that event.preventDefault() prevents ctrl-a and the like
         return
       } else {  // yeah just a printable so let handleKeyboard deal with it
@@ -151,23 +168,38 @@ class CommandLineInput extends React.Component {
       // NOTE: Every event here has a match in handleKeyUp so beware duplication
       switch (key) {
         case 'Backspace': {
-          let start = this.inputElement.selectionStart
-          const end = this.inputElement.selectionEnd
-          start = start === end ? start - 1 : start  // if no selection, delete 1 left of cursor
           const value = this.state.value
-          this.setState({ value: value.slice(0, start) + value.slice(end, value.length) })
-          this.cursorLeft()
+          let cursorStart = this.state.cursorStart
+          const cursorEnd = this.state.cursorEnd
+
+          if (cursorStart === cursorEnd) {  // if no selection, delete 1 left of cursor
+            cursorStart -= 1
+          }
+
+          this.setState({
+            value: value.slice(0, cursorStart) + value.slice(cursorEnd, value.length),
+            cursorStart,
+            cursorEnd: cursorStart
+          })
           event.preventDefault()
-          break
+          return
         }
         case 'Delete': {
-          const start = this.inputElement.selectionStart
-          let end = this.inputElement.selectionEnd
-          end = end === start ? end + 1 : end  // if no selection, delete 1 right of cursor
           const value = this.state.value
-          this.setState({ value: value.slice(0, start) + value.slice(end, value.length) })
+          const cursorStart = this.state.cursorStart
+          let cursorEnd = this.state.cursorEnd
+
+          if (cursorStart === cursorEnd) {  // if no selection, delete 1 right of cursor
+            cursorEnd += 1
+          }
+
+          this.setState({
+            value: value.slice(0, cursorStart) + value.slice(cursorEnd, value.length),
+            cursorStart,
+            cursorEnd: cursorStart
+          })
           event.preventDefault()
-          break
+          return
         }
         case 'ArrowLeft':
           this.cursorLeft()
@@ -179,9 +211,11 @@ class CommandLineInput extends React.Component {
           break
         case 'ArrowUp':
           // TODO scroll history
+          event.preventDefault()
           break
         case 'ArrowDown':
           // TODO scroll history
+          event.preventDefault()
           break
       }
     }
@@ -192,7 +226,7 @@ class CommandLineInput extends React.Component {
     event.stopPropagation()
     const {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey} = event
     console.log(`press ${key} ${ctrlKey}`)
-    const value = this.state.value
+    let value = this.state.value
     if (key.length > 1) {  // non-printable so let handleKeyUp deal with it
       return
     }
@@ -201,24 +235,24 @@ class CommandLineInput extends React.Component {
     }
 
     // TODO add the key based on the text cursor position
-    this.setState({ value: value + key })
-    this.cursorRight(true)
+    value += key
+    const cursorStart = this.state.cursorStart + 1
+    const cursorEnd = this.state.cursorEnd + 1
+    this.setState({ value, cursorStart, cursorEnd })
   }
 
-  cursorLeft() {
-    const pos = this.state.cursorPosition
-    if (pos > 0) {
-      this.setState({ cursorPosition: pos - 1 })
-    }
+  handleClick(event) {
+    this.setState({
+      cursorStart: this.inputElement.selectionStart,
+      cursorEnd: this.inputElement.selectionEnd  // should be identical to selectionStart though
+    })
   }
 
-  cursorRight(offByOne) {
-    let max = this.inputElement.value.length
-    max = offByOne ? max + 1 : max
-    const pos = this.state.cursorPosition
-    if (pos < max) {
-      this.setState({ cursorPosition: pos + 1 })
-    }
+  handleUnclick(event) {
+    this.setState({
+      cursorStart: this.inputElement.selectionStart,
+      cursorEnd: this.inputElement.selectionEnd
+    })
   }
 
   handleSubmit(event) {
@@ -228,6 +262,32 @@ class CommandLineInput extends React.Component {
       this.setState({ value: '' })
     }
     event.preventDefault();
+  }
+
+  cursorLeft(count, sync) {
+    count = typeof count === 'undefined' ? 1 : count
+    sync = typeof sync === 'undefined' ? true : false
+    const { cursorStart, cursorEnd } = this.state
+    console.log(`left ${cursorStart} ${this.inputElement.selectionStart}`)
+    if (cursorStart > 0) {
+      this.setState({ cursorStart: cursorStart - count})
+      if (sync) {
+        this.setState({ cursorEnd: cursorEnd - count})
+      }
+    }
+  }
+
+  cursorRight(count, sync) {
+    count = typeof count === 'undefined' ? 1 : count
+    sync = typeof sync === 'undefined' ? true : false
+    const { cursorStart, cursorEnd } = this.state
+    console.log(`right ${cursorEnd} ${this.inputElement.selectionEnd}`)
+    if (cursorEnd < this.inputElement.value.length) {
+      this.setState({ cursorEnd: cursorEnd + count})
+      if (sync) {
+        this.setState({ cursorStart: cursorStart + count})
+      }
+    }
   }
 
   recordCommand(command) {
@@ -263,6 +323,8 @@ class CommandLineInput extends React.Component {
                  onKeyPress={this.handleKeyboard}
                  onKeyUp={this.handleKeyUp}
                  onKeyDown={this.handleKeyDown}
+                 onMouseDown={this.handleClick}
+                 onMouseUp={this.handleUnclick}
                  ref={this.setInputElement}/>
         </label>
       </form>
