@@ -25,6 +25,7 @@ class App extends React.Component {
     window.addEventListener("resize", this.handleResize.bind(this));
     this.handleKeyboard = this.handleKeyboard.bind(this);
     this.handleRepeatableKeyboard = this.handleRepeatableKeyboard.bind(this);
+    this.handleKeyPress = this.handleKeyPress.bind(this);
   }
 
   handleResize() {
@@ -35,6 +36,7 @@ class App extends React.Component {
   handleKeyboard(event) {
     // this.props.cliElement.focus()
     const {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey} = event
+    console.log(`all: ${key}`)
     ReactTestUtils.Simulate.keyUp(this.props.cliElement,
       {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey})
   }
@@ -47,9 +49,16 @@ class App extends React.Component {
     }
   }
 
+  handleKeyPress(event) {
+    const {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey} = event
+    console.log(`press: ${key}`)
+  }
+
   render() {
     return (
-      <div tabIndex="1" onKeyUp={this.handleKeyboard} onKeyDown={this.handleRepeatableKeyboard}>
+      <div tabIndex="1"
+           onKeyDown={this.handleRepeatableKeyboard}
+           onKeyPress={this.handleKeyboard}>
         <Topbar/>
         <History/>
         <CommandLineInput/>
@@ -97,7 +106,7 @@ class CommandLineInput extends React.Component {
   handleKeyboard(event) {
     event.stopPropagation()
     const {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey} = event
-    console.log(key)
+    console.log(`cli: ${key}`)
     let value = this.state.value
     if (event.key.length > 1) {  // non-printable
       switch (event.key) {
@@ -120,7 +129,7 @@ class CommandLineInput extends React.Component {
           console.error(`Unhandled key ""${event.key}""`)
       }
     } else {  // printable character
-      if (ctrlKey || shiftKey || altKey || metaKey) {  // control sequence
+      if (ctrlKey || altKey || metaKey) {  // control sequence
         // TODO text-editing commands and user-defined commands
       } else {  // just the key
         value += event.key
