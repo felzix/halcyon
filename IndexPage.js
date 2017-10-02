@@ -95,7 +95,8 @@ class CommandLineInput extends React.Component {
     this.state = {
       value: '',
       cursorStart: 0,
-      cursorEnd: 0
+      cursorEnd: 0,
+      historyPosition: null
      }
 
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -136,7 +137,7 @@ class CommandLineInput extends React.Component {
       switch (key) {
         case 'Enter':
           this.handleSubmit(new Event('submit'))
-          this.setState({ value: '' })
+          this.setState({ value: '', cursorStart: 0, cursorEnd: 0, historyPosition: null })
           break
       }
     }
@@ -148,101 +149,134 @@ class CommandLineInput extends React.Component {
     const {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey} = event
     console.log(`down ${key} ${metaKey}`)
     const value = this.state.value
-    if (key.length === 1) {  // might just be a printable
-      if (ctrlKey || shiftKey || altKey || metaKey) {  // this is a control sequence!
+
+    if (key.length === 1 && !(ctrlKey || altKey || metaKey)) {  // shiftKey for capitalization etc
+      return  // printable so do nothing
+    }
+
+    event.preventDefault()
+
+    // NOTE: Every event here has a match in handleKeyUp so beware duplication
+    switch(key) {
+      case 'Backspace': {
         event.preventDefault()
-        if (key === 'a' && metaKey && !(ctrlKey || shiftKey || altKey)) {  // select all
-          this.setState({ cursorStart: 0, cursorEnd: value.length })
-        } else if (key === 'a' && ctrlKey && !(shiftKey || altKey || metaKey)) {  // start of line
-          this.setState({ cursorStart: 0, cursorEnd: 0})
-        } else if (key === 'e' && ctrlKey && !(shiftKey || altKey || metaKey)) {  // end of line
-          this.setState({ cursorStart: value.length, cursorEnd: value.length})
-        }else if (key === 'r' && metaKey && !(shiftKey || altKey || ctrlKey)) {  // reload page
-          window.location.reload()
+        const value = this.state.value
+        let cursorStart = this.state.cursorStart
+        const cursorEnd = this.state.cursorEnd
+
+        if (cursorStart === cursorEnd) {
+          cursorStart -= 1  // if no selection, delete 1 left of cursor
         }
-        return
-      } else {  // yeah just a printable so let handleKeyboard deal with it
+
+        if (cursorStart < 0) {  // can't delete past the beginning of the line
+          return
+        }
+
+        this.setState({
+          value: value.slice(0, cursorStart) + value.slice(cursorEnd, value.length),
+          cursorStart,
+          cursorEnd: cursorStart
+        })
+
         return
       }
-    } else {  // just a control character. note that this happens at the end of sequences too
-      // NOTE: Every event here has a match in handleKeyUp so beware duplication
-      switch (key) {
-        case 'Backspace': {
-          event.preventDefault()
-          const value = this.state.value
-          let cursorStart = this.state.cursorStart
-          const cursorEnd = this.state.cursorEnd
+      case 'Delete': {
+        event.preventDefault()
+        const value = this.state.value
+        const cursorStart = this.state.cursorStart
+        let cursorEnd = this.state.cursorEnd
 
-          if (cursorStart === cursorEnd) {
-            cursorStart -= 1  // if no selection, delete 1 left of cursor
-          }
+        if (cursorStart === cursorEnd) {
+          cursorEnd += 1  // if no selection, delete 1 right of cursor
+        }
 
-          if (cursorStart < 0) {  // can't delete past the beginning of the line
-            return
-          }
-
-          this.setState({
-            value: value.slice(0, cursorStart) + value.slice(cursorEnd, value.length),
-            cursorStart,
-            cursorEnd: cursorStart
-          })
-
+        if (cursorEnd > value.length) {  // can't delete past the end of the line
           return
         }
-        case 'Delete': {
-          event.preventDefault()
-          const value = this.state.value
-          const cursorStart = this.state.cursorStart
-          let cursorEnd = this.state.cursorEnd
 
-          if (cursorStart === cursorEnd) {
-            cursorEnd += 1  // if no selection, delete 1 right of cursor
-          }
+        this.setState({
+          value: value.slice(0, cursorStart) + value.slice(cursorEnd, value.length),
+          cursorStart,
+          cursorEnd: cursorStart
+        })
 
-          if (cursorEnd > value.length) {  // can't delete past the end of the line
-            return
-          }
-
+        return
+      }
+      case 'ArrowLeft': {
+        let { cursorStart, cursorEnd } = this.state
+        const { selectionLeft, selectionRight } = this.inputElement
+        cursorStart -= 1
+        cursorStart = cursorStart < 0 ? 0 : cursorStart
+        if (!shiftKey) {
+          cursorEnd = cursorStart
+        }
+        this.setState({ cursorStart, cursorEnd })
+        event.preventDefault()
+        break
+      }
+      case 'ArrowRight': {
+        let { cursorStart, cursorEnd } = this.state
+        const { selectionLeft, selectionRight, value } = this.inputElement
+        cursorEnd += 1
+        cursorEnd = cursorEnd > value.length ? value.length : cursorEnd
+        if (!shiftKey) {
+          cursorStart = cursorEnd
+        }
+        this.setState({ cursorStart, cursorEnd })
+        event.preventDefault()
+        break
+      }
+      case 'ArrowUp': {
+        let { historyPosition } = this.state
+        let { history } = this.props
+        historyPosition = historyPosition === null ? history.length - 1 : historyPosition - 1
+        if (historyPosition >= 0) {
+          const value = history[historyPosition].command
           this.setState({
-            value: value.slice(0, cursorStart) + value.slice(cursorEnd, value.length),
-            cursorStart,
-            cursorEnd: cursorStart
+            historyPosition,
+            value,
+            cursorStart: value.length,
+            cursorEnd: value.length
           })
-
+        }
+        break
+      }
+      case 'ArrowDown': {
+        let { historyPosition } = this.state
+        let { history } = this.props
+        if (historyPosition === null) {  // already past the end
           return
-        }
-        case 'ArrowLeft': {
-          let { cursorStart, cursorEnd } = this.state
-          const { selectionLeft, selectionRight } = this.inputElement
-          cursorStart -= 1
-          cursorStart = cursorStart < 0 ? 0 : cursorStart
-          if (!shiftKey) {
-            cursorEnd = cursorStart
+        } else {
+          historyPosition += 1
+          if (historyPosition >= history.length) {  // go past the end
+            this.setState({ value: '', historyPosition: null })
+          } else {
+            const value = history[historyPosition].command
+            this.setState({
+              historyPosition: historyPosition,
+              value,
+              cursorStart: value.length,
+              cursorEnd: value.length
+            })
           }
-          this.setState({ cursorStart, cursorEnd })
-          event.preventDefault()
-          break
         }
-        case 'ArrowRight': {
-          let { cursorStart, cursorEnd } = this.state
-          const { selectionLeft, selectionRight, value } = this.inputElement
-          cursorEnd += 1
-          cursorEnd = cursorEnd > value.length ? value.length : cursorEnd
-          if (!shiftKey) {
-            cursorStart = cursorEnd
-          }
-          this.setState({ cursorStart, cursorEnd })
-          event.preventDefault()
-          break
-        }
-        case 'ArrowUp':
-          // TODO scroll history
-          event.preventDefault()
-          break
-        case 'ArrowDown':
-          // TODO scroll history
-          event.preventDefault()
-          break
+      }
+      case 'a': {
+        if (metaKey && !(ctrlKey || shiftKey || altKey)) {  // select all
+          this.setState({ cursorStart: 0, cursorEnd: value.length })
+        } else if (ctrlKey && !(shiftKey || altKey || metaKey)) {  // start of line
+           this.setState({ cursorStart: 0, cursorEnd: 0})
+        }}
+        break
+      case 'e': {
+        if (ctrlKey && !(shiftKey || altKey || metaKey)) {  // end of line
+          this.setState({ cursorStart: value.length, cursorEnd: value.length})
+        }}
+        break
+      case 'r': {
+        if (metaKey && !(shiftKey || altKey || ctrlKey)) {  // reload page
+         window.location.reload()
+       }
       }
     }
   }
