@@ -118,6 +118,7 @@ class CommandLineInput extends React.Component {
     if (key.length == 1) {  // might just be a printable
       if (ctrlKey || shiftKey || altKey || metaKey) {  // this is a control sequence!
         // see handleKeyDown for what belongs here, if anything every does
+        return
       } else {  // yeah just a printable so let handleKeyboard deal with it
         return
       }
@@ -135,13 +136,13 @@ class CommandLineInput extends React.Component {
   // Handles repeatable control characters or control sequences.
   handleKeyDown(event) {
     event.stopPropagation()
-
     const {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey} = event
     console.log(`down ${key} ${ctrlKey}`)
     const value = this.state.value
     if (key.length == 1) {  // might just be a printable
       if (ctrlKey || shiftKey || altKey || metaKey) {  // this is a control sequence!
         // FUTURE: note that event.preventDefault() prevents ctrl-a and the like
+        return
       } else {  // yeah just a printable so let handleKeyboard deal with it
         return
       }
