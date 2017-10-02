@@ -109,12 +109,12 @@ class CommandLineInput extends React.Component {
     this.setState({ value: event.target.value });
   }
 
-  // Passes along printables. Handles control sequences.
+  // Handles non-repeatable control characters or control sequences.
   handleKeyUp(event) {
     event.stopPropagation()
     const {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey} = event
     const value = this.state.value
-    if (key.length == 1) {  // printable so let the onKeyPress handler deal with it
+    if (key.length == 1) {  // printable so let handleKeyboard deal with it
       return
     }
     // NOTE: Every event here has a match in handleKeyDown so beware duplication
@@ -143,11 +143,12 @@ class CommandLineInput extends React.Component {
     }
   }
 
+  // Handles repeatable control characters or control sequences.
   handleKeyDown(event) {
     event.stopPropagation()
     const {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey} = event
     const value = this.state.value
-    if (key.length == 1) {  // printable so let the onKeyPress handler deal with it
+    if (key.length == 1) {  // printable so let handleKeyboard deal with it
       return
     }
     // NOTE: Every event here has a match in handleKeyUp so beware duplication
@@ -159,14 +160,15 @@ class CommandLineInput extends React.Component {
     }
   }
 
+  // Handles printable characters.
   handleKeyboard(event) {
     event.stopPropagation()
     const {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey} = event
     const value = this.state.value
-    if (key.length > 1) {  // non-printable so let the onKeyUp handler deal with it
+    if (key.length > 1) {  // non-printable so let handleKeyUp deal with it
       return
     }
-    if (ctrlKey || altKey || metaKey) {  // control sequence
+    if (ctrlKey || altKey || metaKey) {  // control sequence so let handleKeyUp deal with it
       return
     }
 
