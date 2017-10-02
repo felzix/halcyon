@@ -92,10 +92,10 @@ class History extends React.Component {
 class CommandLineInput extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { value: '' };
+    this.state = { value: '', cursorPosition: 0 };
 
-    this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
+    this.setInputElement = this.setInputElement.bind(this);
     this.handleKeyboard = this.handleKeyboard.bind(this);
     this.handleKeyUp = this.handleKeyUp.bind(this);
     this.handleKeyDown = this.handleKeyDown.bind(this);
@@ -105,8 +105,9 @@ class CommandLineInput extends React.Component {
     this.inputElement.focus()
   }
 
-  handleChange(event) {
-    this.setState({ value: event.target.value });
+  componentDidUpdate() {
+    this.inputElement.selectionStart = this.state.cursorPosition
+    this.inputElement.selectionEnd = this.state.cursorPosition
   }
 
   // Handles non-repeatable control characters or control sequences.
@@ -155,6 +156,8 @@ class CommandLineInput extends React.Component {
           start = start === end ? start - 1 : start  // if no selection, delete 1 left of cursor
           const value = this.state.value
           this.setState({ value: value.slice(0, start) + value.slice(end, value.length) })
+          this.cursorLeft()
+          event.preventDefault()
           break
         }
         case 'Delete': {
@@ -163,8 +166,23 @@ class CommandLineInput extends React.Component {
           end = end === start ? end + 1 : end  // if no selection, delete 1 right of cursor
           const value = this.state.value
           this.setState({ value: value.slice(0, start) + value.slice(end, value.length) })
-            break
+          event.preventDefault()
+          break
         }
+        case 'ArrowLeft':
+          this.cursorLeft()
+          event.preventDefault()
+          break
+        case 'ArrowRight':
+          this.cursorRight()
+          event.preventDefault()
+          break
+        case 'ArrowUp':
+          // TODO scroll history
+          break
+        case 'ArrowDown':
+          // TODO scroll history
+          break
       }
     }
   }
@@ -184,6 +202,23 @@ class CommandLineInput extends React.Component {
 
     // TODO add the key based on the text cursor position
     this.setState({ value: value + key })
+    this.cursorRight(true)
+  }
+
+  cursorLeft() {
+    const pos = this.state.cursorPosition
+    if (pos > 0) {
+      this.setState({ cursorPosition: pos - 1 })
+    }
+  }
+
+  cursorRight(offByOne) {
+    let max = this.inputElement.value.length
+    max = offByOne ? max + 1 : max
+    const pos = this.state.cursorPosition
+    if (pos < max) {
+      this.setState({ cursorPosition: pos + 1 })
+    }
   }
 
   handleSubmit(event) {
@@ -207,6 +242,11 @@ class CommandLineInput extends React.Component {
     this.props.pushHistory(command)
   }
 
+  setInputElement(element) {
+    this.inputElement = element
+    this.props.setCliElement(element)
+  }
+
   render() {
     return (
       <form onSubmit={this.handleSubmit}
@@ -223,7 +263,7 @@ class CommandLineInput extends React.Component {
                  onKeyPress={this.handleKeyboard}
                  onKeyUp={this.handleKeyUp}
                  onKeyDown={this.handleKeyDown}
-                 ref={input => { this.inputElement = input; this.props.setCliElement(input) }}/>
+                 ref={this.setInputElement}/>
         </label>
       </form>
     );
