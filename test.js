@@ -1,101 +1,96 @@
 import test from 'ava';
-import parse from './lisp-parser'
+import { parse, evaluate } from './lisp-parser'
 
-
-test('foo', t => {
-	t.pass();
-});
 
 test('bar', async t => {
 	const bar = Promise.resolve('bar');
-
-	t.is(await bar, 'bar');
+	t.deepEqual(await bar, 'bar');
 });
 
 test('lisp-parser :: empty string', t => {
-  t.is(parse(''), undefined)
+  const tree = parse('')
+  t.deepEqual(tree, undefined)
+  t.deepEqual(evaluate(tree, {}), undefined)
 })
 
 test('lisp-parser :: empty list', t => {
-  t.deepEqual(parse('()'), [])
+  const tree = parse('()')
+  t.deepEqual(tree, [])
+  // t.deepEqual(evaluate(tree), [])
 })
 
 test('lisp-parser :: symbol', t => {
-  t.is(parse('Math.sqrt'), Math.sqrt)
+  const tree = parse('Math.sqrt')
+  t.deepEqual(tree, 'Math.sqrt')
+  // t.deepEqual(evaluate(Math.sqrt), Math.sqrt)
 })
 
 test('lisp-parser :: integer', t => {
-  t.is(parse('17'), 17)
+  const tree = parse('17')
+  t.deepEqual(tree, '17')
 })
 
 test('lisp-parser :: float', t => {
-  t.is(parse('17.19'), 17.19)
+  const tree = parse('17.19')
+  t.deepEqual(tree, '17.19')
 })
 
 test('lisp-parser :: addition', t => {
-  const result = parse('(+ 3 4 5 6)')
-  t.is(result, 18)
+  const tree = parse('(+ 3 4 5 6)')
+  t.deepEqual(tree, ['+', '3', '4', '5', '6'])
 })
 
 test('lisp-parser :: addition, empty', t => {
-  const result = parse('(+)')
-  t.is(result, 0)
+  const tree = parse('(+)')
+  t.deepEqual(tree, ['+'])
 })
 
 test('lisp-parser :: addition, one', t => {
-  const result = parse('(+ 5)')
-  t.is(result, 5)
+  const tree = parse('(+ 5)')
+  t.deepEqual(tree, ['+', '5'])
 })
 
 test('lisp-parser :: square root', t => {
-  const result = parse('(Math.sqrt 4)')
-  t.is(result, 2)
+  const tree = parse('(Math.sqrt 4)')
+  t.deepEqual(tree, ['Math.sqrt', '4'])
 })
 
 test('lisp-parser :: nested', t => {
-  const result = parse('(+ 5 (+ 2 7))')
-  t.is(result, 14)
+  const tree = parse('(+ 5 (+ 2 7))')
+  t.deepEqual(tree, ['+', '5', ['+', '2', '7']])
 })
 
 test('lisp-parser :: quote empty', t => {
-  const result = parse('(quote)')
-  t.deepEqual(result, null)
+  const tree = parse('(quote)')
+  t.deepEqual(tree, ['quote'])
 })
 
 test('lisp-parser :: quote of empty', t => {
-  const result = parse('(quote ())')
-  t.deepEqual(result, [])
+  const tree = parse('(quote ())')
+  t.deepEqual(tree, ['quote', []])
 })
 
 test('lisp-parser :: quote tiny', t => {
-  const result = parse('(quote 1)')
-  t.is(result, 1)
+  const tree = parse('(quote 1)')
+  t.deepEqual(tree, ['quote', '1'])
 })
 
 test('lisp-parser :: quote small', t => {
-  const result = parse('(quote (1))')
-  t.deepEqual(result, [1])
+  const tree = parse('(quote (1))')
+  t.deepEqual(tree, ['quote', ['1']])
 })
 
 test('lisp-parser :: quote fullhand', t => {
-  const result = parse('(quote (1 2 3))')
-  t.deepEqual(result, [1, 2, 3])
+  const tree = parse('(quote (1 2 3))')
+  t.deepEqual(tree, ['quote', ['1', '2', '3']])
 })
 
 test('lisp-parser :: quote shorthand', t => {
-  const result = parse("'(1 2 3)")
-  t.deepEqual(result, [1, 2, 3])
+  const tree = parse("'(1 2 3)")
+  t.deepEqual(tree, ['quote', ['1', '2', '3']])
 })
 
 test('lisp-parser :: quote nested', t => {
-  const result = parse('(quote (+ 1 (+ 2 3)))')
-  t.deepEqual(result, ['+', 1, ['+', 2, 3]])
-})
-
-test('lisp-parser :: global', t => {
-  const state = parse('T(def x 12)')
-  t.deepEqual(state, {
-    definitions: [ { x: 12 } ],
-    result: undefined
-  })
+  const tree = parse('(quote (+ 1 (+ 2 3)))')
+  t.deepEqual(tree, ['quote', ['+', '1', ['+', '2', '3']]])
 })

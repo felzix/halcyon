@@ -38,52 +38,43 @@ const grammar = `
 }
 
 start
-  = "T" result:sexpr {
-    return {
-      result,
-      definitions
-    }
-  }
-  / sexpr
+  = sexpr
 
 sexpr
-  = _ a:atom _ { return eval(a) }
-  / "(" _ ")" { return [] }
-  / "(" _ "+" _ args:sexpr*  _ ")" {
-    if (args.length === 0) {
-      return 0
-    } else {
-      return args.reduce((x, y) => x + y) }
-    }
-  / "(" _ "quote" _ args:quoted? _ ")" { return args }
-  / "'" args:quoted { return args }
-  / "(" _ "def" _ s:symbol _ m:sexpr _ ")" { def(s, m) }
-  / "(" _ fn:symbol _ args:sexpr*  _ ")" { return evoke(fn)(args[0]) }
-
-quoted
-  = _ "(" _ r:quoted*  _ ")" _ { return r === null ? [] : r }
-  / _ a:atom _ { return a }
+  = _ a:atom _ { return a }
+  / "'" args:sexpr+ { return ['quote'].concat(args) }
+  / "(" _ args:sexpr* _ ")" { return args === null ? [] : args }
 
 atom
-  = symbol
-  / float
+  = float
   / integer
+  / symbol
 
 symbol
   = [a-zA-Z.+]+ [a-zA-Z.+0-9]* { return text() }
 
-float "float"
-  = [0-9]+ "." [0-9]+ { return parseFloat(text(), 10) }
+float
+  = [0-9]+ "." [0-9]+ { return text() }
 
-integer "integer"
-  = [0-9]+ { return parseInt(text(), 10) }
+integer
+  = [0-9]+ { return text() }
 
 _ = [ \\t\\n]*
 `
 const parser = generate(grammar)
 
 
-export default function parse(string, environment) {
+// Returns a (usually nested) Array of strings
+export function parse(string) {
   if (string === '') return
   return parser.parse(string)
+}
+
+export function evaluate(tree, env) {
+
+}
+
+export default function (string, environment) {
+  const tree = parse(string)
+  return evaluate(tree, environment)
 }
