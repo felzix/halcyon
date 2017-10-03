@@ -9,25 +9,31 @@ const grammar = `
 }
 
 start
-  = expr
-
-expr
-  = sexpr / atom
+  = sexpr
 
 sexpr
-  = "(" _ ")" { return null }
-  / "(" _ "+" _ args:list  _ ")" { return args.reduce((x, y) => x + y) }
-  / "(" _ fn:symbol _ args:list  _ ")" { return eval(fn)(args[0]) }
+  = _ a:atom _ { return eval(a) }
+  / "(" _ ")" { return [] }
+  / "(" _ "+" _ args:sexpr*  _ ")" {
+    if (args.length === 0) {
+      return 0
+    } else {
+      return args.reduce((x, y) => x + y) }
+    }
+  / "(" _ "quote" _ args:quoted? _ ")" { return args }
+  / "'" args:quoted { return args }
+  / "(" _ fn:symbol _ args:sexpr*  _ ")" { return eval(fn)(args[0]) }
 
-list
-  = f:expr _ r:list* { return r.length === 0 ? [f] : [f].concat(r[0]) }
+quoted
+  = _ "(" _ r:quoted*  _ ")" _ { return r === null ? [] : r }
+  / _ a:atom _ { return a }
 
 atom
   = symbol
   / integer
 
 symbol
-  = [a-zA-Z.+]+ [a-zA-Z.+0-9]* { return eval(text()) }
+  = [a-zA-Z.+]+ [a-zA-Z.+0-9]* { return text() }
 
 integer "integer"
   = digits:[0-9]+ { return parseInt(digits.join(""), 10) }
