@@ -24,6 +24,14 @@ test('lisp-parser :: symbol', t => {
   t.is(parse('Math.sqrt'), Math.sqrt)
 })
 
+test('lisp-parser :: integer', t => {
+  t.is(parse('17'), 17)
+})
+
+test('lisp-parser :: float', t => {
+  t.is(parse('17.19'), 17.19)
+})
+
 test('lisp-parser :: addition', t => {
   const result = parse('(+ 3 4 5 6)')
   t.is(result, 18)

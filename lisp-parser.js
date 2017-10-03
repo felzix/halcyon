@@ -30,13 +30,17 @@ quoted
 
 atom
   = symbol
+  / float
   / integer
 
 symbol
   = [a-zA-Z.+]+ [a-zA-Z.+0-9]* { return text() }
 
+float "float"
+  = [0-9]+ "." [0-9]+ { return parseFloat(text(), 10) }
+
 integer "integer"
-  = digits:[0-9]+ { return parseInt(digits.join(""), 10) }
+  = [0-9]+ { return parseInt(text(), 10) }
 
 _ = [ \\t\\n]*
 `
