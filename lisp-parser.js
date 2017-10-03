@@ -6,10 +6,42 @@ const grammar = `
   function log(x) {
     console.log(x)
   }
+
+  const definitions = [{}]
+  let scope = 0
+
+  function evoke(symbol) {
+    for (let i = definitions.length; i > 0; i--) {
+      const meaning = definitions[scope][symbol]
+      if (meaning !== 'undefined') {
+        return meaning
+      }
+    }
+  }
+
+  function def(symbol, meaning) {
+    definitions[scope][symbol] = meaning
+  }
+
+  function moreScope() {
+    definitions.push({})
+    scope += 1
+  }
+
+  function lessScope() {
+    definitions.pop()
+    scope -= 1
+  }
 }
 
 start
-  = sexpr
+  = "T" result:sexpr {
+    return {
+      result,
+      definitions
+    }
+  }
+  / sexpr
 
 sexpr
   = _ a:atom _ { return eval(a) }
@@ -22,6 +54,7 @@ sexpr
     }
   / "(" _ "quote" _ args:quoted? _ ")" { return args }
   / "'" args:quoted { return args }
+  / "(" _ "def" _ s:symbol _ m:sexpr _ ")" { def(s, m) }
   / "(" _ fn:symbol _ args:sexpr*  _ ")" { return eval(fn)(args[0]) }
 
 quoted

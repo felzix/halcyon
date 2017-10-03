@@ -91,3 +91,11 @@ test('lisp-parser :: quote nested', t => {
   const result = parse('(quote (+ 1 (+ 2 3)))')
   t.deepEqual(result, ['+', 1, ['+', 2, 3]])
 })
+
+test('lisp-parser :: global', t => {
+  const state = parse('T(def x 12)')
+  t.deepEqual(state, {
+    definitions: [ { x: 12 } ],
+    result: undefined
+  })
+})
