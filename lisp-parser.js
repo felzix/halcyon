@@ -55,10 +55,10 @@ function evoke(context, symbol) {
   }
 }
 
-function makeHelper(definitions) {
+function makeHelper(context) {
   const helper = tree => {
     if (typeof tree !== 'object') {
-      return evoke(definitions, tree)
+      return evoke(context, tree)
     } else if (tree.length === 0){
       return []
     }
@@ -79,19 +79,19 @@ function makeHelper(definitions) {
         } else {
           const symbol = rest[0]
           const value = helper(rest[1])
-          definitions.definitions[symbol] = value
+          context.definitions[symbol] = value
           return value
         }
         break
       }
       case 'block': {
-        const parent = definitions
-        definitions = { definitions: {} }
+        const parent = context
+        context = { definitions: {} }
         let finalValue
         for (let i = 0; i < rest.length; i++) {
           finalValue = helper(rest[i])
         }
-        definitions = parent
+        context = parent
         return finalValue
       }
       case 'lambda': {
@@ -129,7 +129,7 @@ function makeHelper(definitions) {
         break
       }
       default: {
-        first = evoke(definitions, first)
+        first = evoke(context, first)
       }
     }
 
