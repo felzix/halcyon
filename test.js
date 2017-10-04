@@ -1,12 +1,12 @@
 import test from 'ava';
-import { parse, evaluate, buildLambdaString } from './lisp-parser'
+import { parse, evaluate, buildLambdaString, defaultContext } from './lisp-parser'
 import parseAndEval from './lisp-parser'
 
 
 function testParse(t, string, expectedTree, expectedResult) {
   const tree = parse(string)
   t.deepEqual(tree, expectedTree)
-  t.deepEqual(evaluate(tree), expectedResult)
+  t.deepEqual(evaluate(tree, defaultContext), expectedResult)
 }
 
 

@@ -82,7 +82,7 @@ export function buildLambdaString(rest) {
     }`
 }
 
-const defaultContext = {
+export const defaultContext = {
   parent: undefined,  // written here for clarity
   definitions: {
     list: (...args) => { return args },
@@ -96,8 +96,6 @@ const defaultContext = {
 }
 
 export function evaluate(tree, context) {
-  context = typeof context === 'undefined' ? Object.assign({}, defaultContext) : context
-
   if (typeof tree !== 'object') {
     return evoke(tree, context)
   } else if (tree.length === 0){
