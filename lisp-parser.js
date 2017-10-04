@@ -112,22 +112,6 @@ function makeHelper(context) {
           // TODO implement lambda!
         }
       }
-      case '+': {
-        first = add
-        break
-      }
-      case '-': {
-        first = subtract
-        break
-      }
-      case '*': {
-        first = multiply
-        break
-      }
-      case '/': {
-        first = divide
-        break
-      }
       default: {
         first = evoke(context, first)
       }
@@ -220,6 +204,10 @@ export function evaluate(root) {
     parent: undefined,  // written here for clarity
     definitions: {
       list: (...args) => { return args },
+      '+': add,
+      '-': subtract,
+      '*': multiply,
+      '/': divide
     }
   }
   return internalEval(root, globalContext)
