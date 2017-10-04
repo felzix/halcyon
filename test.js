@@ -108,7 +108,6 @@ test('lisp-parser :: util :: buildLambdaString', t => {
   const context = {'parent': 'fake', 'definitions': {'foo': 'bar'}}
 
   const string = buildLambdaString(rest, context)
-  console.log(string)
   t.is(string,`
     (x, y) => {
       body = [

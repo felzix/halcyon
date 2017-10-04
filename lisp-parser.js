@@ -161,28 +161,25 @@ export function buildLambdaString(rest) {
     }`
 }
 
-export function evaluate(root) {
-  const globalContext = {
-    parent: undefined,  // written here for clarity
-    definitions: {
-      list: (...args) => { return args },
-      '+': makeArithmetic('+', args => { return args.reduce((x, y) => { return x + y }) }),
-      '-': makeArithmetic('-', args => { return -args[0] },
-                               args => { return args.reduce((x, y) => { return x - y }) }),
-      '*': makeArithmetic('*', args => { return args.reduce((x, y) => { return x * y }) }),
-      '/': makeArithmetic('/', args => { return 1 / args[0] },
-                               args => { return args.reduce((x, y) => { return x / y }) }),
-    }
+const defaultContext = {
+  parent: undefined,  // written here for clarity
+  definitions: {
+    list: (...args) => { return args },
+    '+': makeArithmetic('+', args => { return args.reduce((x, y) => { return x + y }) }),
+    '-': makeArithmetic('-', args => { return -args[0] },
+                             args => { return args.reduce((x, y) => { return x - y }) }),
+    '*': makeArithmetic('*', args => { return args.reduce((x, y) => { return x * y }) }),
+    '/': makeArithmetic('/', args => { return 1 / args[0] },
+                             args => { return args.reduce((x, y) => { return x / y }) }),
   }
-  return internalEval(root, globalContext)
+}
+
+export function evaluate(root) {
+  return internalEval(root, defaultContext)
 }
 
 export function internalEval(semanticRoot, context) {
-  console.log(semanticRoot)
-  console.log(context)
-  console.log('----------')
   const helper = makeHelper(context)
-
   return helper(semanticRoot)
 }
 
