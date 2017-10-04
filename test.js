@@ -138,13 +138,16 @@ test('lisp-parser :: util :: buildLambdaString', t => {
 
   const string = buildLambdaString(rest, context)
   t.is(string,`
-    (x, y) => {
+    (function(x, y) {
+      if (arguments.length !== 2) {
+        return { error: 'has ' + arguments.length + ' arg(s) should have ' + 2 + ' arg(s)'}
+      }
       body = [
         'block',
           ['def', 'x', x],['def', 'y', y]]
       body = body.concat([["*","x","y"]])
       return evaluate(body, context)
-    }`)
+    })`)
 })
 
 test('lisp-parser :: lambda', t => {
@@ -156,6 +159,36 @@ test('lisp-parser :: lambda', t => {
       ['def', 'double', ['lambda', ['x'], ['*', 'x', 2]]],
       ['double', 8]],
     16)
+})
+
+test('lisp-parser :: lambda multiparam', t => {
+  testParse(t, `
+    (block
+      (def m (lambda (x y) (* x y)))
+      (m 8 3))`,
+    ['block',
+      ['def', 'm', ['lambda', ['x', 'y'], ['*', 'x', 'y']]],
+      ['m', 8, 3]],
+    24)
+})
+
+test('lisp-parser :: lambda wrong args', t => {
+  testParse(t, `
+    (block
+      (def m (lambda (x y) (* x y)))
+      (m 8))`,
+    ['block',
+      ['def', 'm', ['lambda', ['x', 'y'], ['*', 'x', 'y']]],
+      ['m', 8]],
+    { error: 'has 1 arg(s) should have 2 arg(s)' })
+    testParse(t, `
+      (block
+        (def m (lambda (x y) (* x y)))
+        (m 8 9 10))`,
+      ['block',
+        ['def', 'm', ['lambda', ['x', 'y'], ['*', 'x', 'y']]],
+        ['m', 8, 9, 10]],
+      { error: 'has 3 arg(s) should have 2 arg(s)' })
 })
 
 test('lisp-parser :: closure', t => {

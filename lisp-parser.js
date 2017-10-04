@@ -73,13 +73,16 @@ export function buildLambdaString(rest) {
   const locals = params.map(p => { return `['def', '${p}', ${p}]` })
   const body = rest.slice(1)
   return `
-    (${params.join(', ')}) => {
+    (function(${params.join(', ')}) {
+      if (arguments.length !== ${params.length}) {
+        return { error: 'has ' + arguments.length + ' arg(s) should have ' + ${params.length} + ' arg(s)'}
+      }
       body = [
         'block',
           ${locals}]
       body = body.concat(${JSON.stringify(rest.slice(1))})
       return evaluate(body, context)
-    }`
+    })`
 }
 
 export const defaultContext = {
