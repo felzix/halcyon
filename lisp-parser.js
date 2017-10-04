@@ -142,39 +142,16 @@ function makeHelper(context) {
   return helper
 }
 
-function add(...args) {
-  if (args.length === 0) {
-    return { error: '`+` must have at least 1 argument' }
-  } else {
-    return args.reduce((x, y) => { return x + y })
-  }
-}
-
-function subtract(...args) {
-  if (args.length === 0) {
-    return { error: '`-` must have at least 1 argument' }
-  } else if (args.length === 1){
-    return -args[0]
-  } else {
-    return args.reduce((x, y) => { return x - y })
-  }
-}
-
-function multiply(...args) {
-  if (args.length === 0) {
-    return { error: '`*` must have at least 1 argument' }
-  } else {
-    return args.reduce((x, y) => { return x * y })
-  }
-}
-
-function divide(...args) {
-  if (args.length === 0) {
-    return { error: '`/` must have at least 1 argument' }
-  } else if (args.length === 1) {
-    return 1 / args[0]
-  } else {
-    return args.reduce((x, y) => { return x / y })
+function makeArithmetic(symbol, one, many) {
+  many = typeof many === 'undefined' ? one : many
+  return function(...args) {
+    if (args.length === 0) {
+      return { error: '`' + symbol + '` must have at least 1 argument' }
+    } else if (args.length === 1) {
+      return one(args)
+    } else {
+      return many(args)
+    }
   }
 }
 
@@ -204,10 +181,12 @@ export function evaluate(root) {
     parent: undefined,  // written here for clarity
     definitions: {
       list: (...args) => { return args },
-      '+': add,
-      '-': subtract,
-      '*': multiply,
-      '/': divide
+      '+': makeArithmetic('+', args => { return args.reduce((x, y) => { return x + y }) }),
+      '-': makeArithmetic('-', args => { return -args[0] },
+                               args => { return args.reduce((x, y) => { return x - y }) }),
+      '*': makeArithmetic('*', args => { return args.reduce((x, y) => { return x * y }) }),
+      '/': makeArithmetic('/', args => { return 1 / args[0] },
+                               args => { return args.reduce((x, y) => { return x / y }) }),
     }
   }
   return internalEval(root, globalContext)
