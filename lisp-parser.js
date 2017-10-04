@@ -21,14 +21,14 @@ symbol
 symbolic = [a-zA-Z.+*/-]
 
 float
-  = [0-9]+ "." [0-9]+ { return text() }
+  = [0-9]+ "." [0-9]+ { return parseFloat(text(), 10) }
 
 integer
-  = [0-9]+ { return text() }
+  = [0-9]+ { return parseInt(text(), 10) }
 
 boolean
-  = "true" { return text() }
-  / "false" { return text() }
+  = "true" { return true }
+  / "false" { return false }
 
 _ = [ \\t\\n]*
 `
@@ -86,6 +86,25 @@ export const defaultContext = {
   parent: undefined,  // written here for clarity
   definitions: {
     list: (...args) => { return args },
+    head: (...args) => {
+      console.log(args)
+      if (args.length !== 1) {
+        return { 'error': '`head` takes exactly 1 argument' }
+      } else if (!Array.isArray(args[0]) || args[0].length === 0) {
+        return { 'error': 'argument to `head` must be a list of at least 1 element' }
+      } else {
+        return args[0][0]
+      }
+    },
+    rest: (...args) => {
+      if (args.length !== 1) {
+        return { 'error': '`rest` takes exactly 1 argument' }
+      } else if (!Array.isArray(args[0]) || args[0].length === 0) {
+        return { 'error': 'argument to `rest` must be a list of at least 1 element' }
+      } else {
+        return args[0].slice(1)
+      }
+    },
     '+': makeArithmetic('+', args => { return args.reduce((x, y) => { return x + y }) }),
     '-': makeArithmetic('-', args => { return -args[0] },
                              args => { return args.reduce((x, y) => { return x - y }) }),
