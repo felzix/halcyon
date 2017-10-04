@@ -138,6 +138,7 @@ test('lisp-parser :: more lambda', t => {
         (lambda (y)
           (console.log y)
           (+ x y))))
-      outer)`)
+      (def jazz (outer 9))
+      (jazz 3))`)
   t.is(result, 9+3)
 })
