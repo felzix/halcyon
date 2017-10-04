@@ -1,5 +1,5 @@
 import test from 'ava';
-import { parse, evaluate, buildLambdaString, defaultContext } from './lisp-parser'
+import { parse, evaluate, buildLambdaString, defaultContext, makeInterpreter } from './lisp-parser'
 import parseAndEval from './lisp-parser'
 
 
@@ -173,4 +173,11 @@ test('lisp-parser :: lambda as first argument', t => {
   const result = parseAndEval(`
     ((lambda (x) (* x 10)) 8)`)
   t.is(result, 10*8)
+})
+
+test('lisp-parser :: interpreter', t => {
+  const interpreter = makeInterpreter()
+  t.is(interpreter('1'), 1)
+  t.is(interpreter('(quote 7)'), 7)
+  t.deepEqual(interpreter('(list 6 7)'), [6, 7])
 })

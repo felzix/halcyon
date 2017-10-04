@@ -87,7 +87,6 @@ export const defaultContext = {
   definitions: {
     list: (...args) => { return args },
     head: (...args) => {
-      console.log(args)
       if (args.length !== 1) {
         return { 'error': '`head` takes exactly 1 argument' }
       } else if (!Array.isArray(args[0]) || args[0].length === 0) {
@@ -181,6 +180,13 @@ export function evaluate(tree, context) {
     default: {
       // TODO throw an error
     }
+  }
+}
+
+export function makeInterpreter() {
+  const globalContext = Object.assign({}, defaultContext)
+  return input => {
+    return evaluate(parse(input), globalContext)
   }
 }
 
