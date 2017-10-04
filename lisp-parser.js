@@ -91,6 +91,7 @@ function makeHelper(context) {
         for (let i = 0; i < rest.length; i++) {
           finalValue = helper(rest[i])
         }
+        console.log(context)
         context = parent
         return finalValue
       }
@@ -174,8 +175,9 @@ const defaultContext = {
   }
 }
 
-export function evaluate(root) {
-  return internalEval(root, defaultContext)
+export function evaluate(root, context) {
+  context = typeof context === 'undefined' ? Object.assign({}, defaultContext) : context
+  return internalEval(root, context)
 }
 
 export function internalEval(semanticRoot, context) {
@@ -183,9 +185,9 @@ export function internalEval(semanticRoot, context) {
   return helper(semanticRoot)
 }
 
-export default function (string, environment) {
+export default function (string) {
   const tree = parse(string)
   if (typeof tree !== 'undefined') {
-    return evaluate(tree, environment)
+    return evaluate(tree)
   }
 }

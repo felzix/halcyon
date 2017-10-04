@@ -1,5 +1,6 @@
 import test from 'ava';
 import { parse, evaluate, buildLambdaString } from './lisp-parser'
+import parseAndEval from './lisp-parser'
 
 
 function testParse(t, string, expectedTree, expectedResult) {
@@ -127,4 +128,16 @@ test('lisp-parser :: lambda', t => {
       ['def', 'double', ['lambda', ['x'], ['*', 'x', '2']]],
       ['double', '8']],
     16)
+})
+
+test('lisp-parser :: more lambda', t => {
+  const result = parseAndEval(`
+    (block
+      (def outer (lambda (x)
+        console.log(x)
+        (lambda (y)
+          (console.log y)
+          (+ x y))))
+      outer)`)
+  t.is(result, 9+3)
 })
