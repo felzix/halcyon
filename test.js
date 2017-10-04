@@ -114,7 +114,7 @@ test('lisp-parser :: util :: buildLambdaString', t => {
       body = [
         'block',
           ['def', 'x', x],['def', 'y', y]]
-      body.concat([["*","x","y"]])
+      body = body.concat([["*","x","y"]])
       return internalEval(body, context)
     }`)
 })

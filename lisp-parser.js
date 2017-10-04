@@ -86,7 +86,7 @@ function makeHelper(context) {
       }
       case 'block': {
         const parent = context
-        context = { definitions: {} }
+        context = { parent, definitions: {} }
         let finalValue
         for (let i = 0; i < rest.length; i++) {
           finalValue = helper(rest[i])
@@ -101,9 +101,7 @@ function makeHelper(context) {
           const params = rest[0]
           let body = rest[1]
           // context comes from the local scope right here
-          const fn = eval(buildLambdaString(rest))
-          return fn
-          // TODO implement lambda!
+          return eval(buildLambdaString(rest))
         }
       }
       default: {
@@ -158,7 +156,7 @@ export function buildLambdaString(rest) {
       body = [
         'block',
           ${locals}]
-      body.concat(${JSON.stringify(rest.slice(1))})
+      body = body.concat(${JSON.stringify(rest.slice(1))})
       return internalEval(body, context)
     }`
 }
@@ -180,6 +178,9 @@ export function evaluate(root) {
 }
 
 export function internalEval(semanticRoot, context) {
+  console.log(semanticRoot)
+  console.log(context)
+  console.log('----------')
   const helper = makeHelper(context)
 
   return helper(semanticRoot)
