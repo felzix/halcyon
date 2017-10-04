@@ -73,19 +73,30 @@ function makeHelper(definitions, evoke) {
           return rest[0]  // don't interpret the rest
         }
       }
-      case "+": {
+      case 'def': {
+        if (rest.length !== 2) {
+          return { error: '`def` must have exactly 2 arguments' }
+        } else {
+          const symbol = rest[0]
+          const value = helper(rest[1])
+          definitions[definitions.length - 1][symbol] = value
+          return value
+        }
+        break
+      }
+      case '+': {
         first = add
         break
       }
-      case "-": {
+      case '-': {
         first = subtract
         break
       }
-      case "*": {
+      case '*': {
         first = multiply
         break
       }
-      case "/": {
+      case '/': {
         first = divide
         break
       }

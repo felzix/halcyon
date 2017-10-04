@@ -86,5 +86,5 @@ test('lisp-parser :: list', t => {
 
 
 test('lisp-parser :: global def', t => {
-  t.pass()
+  testParse(t, '(list (def foo 12) foo)', ['list', ['def', 'foo', '12'], 'foo'], [12, 12])
 })
