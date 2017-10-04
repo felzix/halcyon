@@ -41,24 +41,24 @@ export function parse(string) {
   return parser.parse(string)
 }
 
-function makeEvoke(definitions) {
-  return symbol => {
-    // lisp
-    for (let i = definitions.length - 1; i >= 0; i--) {
-      const meaning = definitions[i][symbol]
-      if (typeof meaning !== 'undefined') {
-        return meaning
-      }
-    }
+function evoke(context, symbol) {
+  const parent = context.parent
+  const definitions = context.definitions
+  const meaning = definitions[symbol]
+  if (typeof meaning !== 'undefined') {
+    return meaning
+  } else if (typeof parent !== 'undefined') {
+    return evoke(parent, symbol)
+  } else {
     // javascript
     return eval(symbol)
   }
 }
 
-function makeHelper(definitions, evoke) {
+function makeHelper(definitions) {
   const helper = tree => {
     if (typeof tree !== 'object') {
-      return evoke(tree)
+      return evoke(definitions, tree)
     } else if (tree.length === 0){
       return []
     }
@@ -79,18 +79,19 @@ function makeHelper(definitions, evoke) {
         } else {
           const symbol = rest[0]
           const value = helper(rest[1])
-          definitions[definitions.length - 1][symbol] = value
+          definitions.definitions[symbol] = value
           return value
         }
         break
       }
       case 'block': {
-        definitions.push({})
+        const parent = definitions
+        definitions = { definitions: {} }
         let finalValue
         for (let i = 0; i < rest.length; i++) {
           finalValue = helper(rest[i])
         }
-        definitions.pop()
+        definitions = parent
         return finalValue
       }
       case 'lambda': {
@@ -128,7 +129,7 @@ function makeHelper(definitions, evoke) {
         break
       }
       default: {
-        first = evoke(first)
+        first = evoke(definitions, first)
       }
     }
 
@@ -214,21 +215,18 @@ export function buildLambdaString(rest) {
     }`
 }
 
-export function globalEvaluate(root) {
-  const globalContext = [{
-    list: (...args) => { return args },
-    parent: undefined  // written here for clarity
-  }]
-  return evaluate(globalContext)
+export function evaluate(root) {
+  const globalContext = {
+    parent: undefined,  // written here for clarity
+    definitions: {
+      list: (...args) => { return args },
+    }
+  }
+  return internalEval(root, globalContext)
 }
 
-export function evaluate(semanticRoot, context) {
-  const definitions = [{
-    list: (...args) => { return args }
-  }]
-
-  const evoke = makeEvoke(definitions)
-  const helper = makeHelper(definitions, evoke)
+export function internalEval(semanticRoot, context) {
+  const helper = makeHelper(context)
 
   return helper(semanticRoot)
 }
