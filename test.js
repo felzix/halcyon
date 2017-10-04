@@ -84,7 +84,19 @@ test('lisp-parser :: list', t => {
   )
 })
 
-
-test('lisp-parser :: global def', t => {
+test('lisp-parser :: symbolism', t => {
   testParse(t, '(list (def foo 12) foo)', ['list', ['def', 'foo', '12'], 'foo'], [12, 12])
+  testParse(t, '(block (def foo 12) foo)', ['block', ['def', 'foo', '12'], 'foo'], 12)
+  testParse(t, `
+    (block
+      (def foo 12)
+      (block
+        (def foo 8))
+      foo)`,
+    ['block',
+      ['def', 'foo', '12'],
+      ['block',
+        ['def', 'foo', '8']],
+      'foo'],
+    12)
 })

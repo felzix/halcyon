@@ -84,6 +84,15 @@ function makeHelper(definitions, evoke) {
         }
         break
       }
+      case 'block': {
+        definitions.push({})
+        let finalValue
+        for (let i = 0; i < rest.length; i++) {
+          finalValue = helper(rest[i])
+        }
+        definitions.pop()
+        return finalValue
+      }
       case '+': {
         first = add
         break
