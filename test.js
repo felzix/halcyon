@@ -1,5 +1,5 @@
 import test from 'ava';
-import { parse, evaluate } from './lisp-parser'
+import { parse, evaluate, buildLambdaString } from './lisp-parser'
 
 
 function testParse(t, string, expectedTree, expectedResult) {
@@ -84,6 +84,7 @@ test('lisp-parser :: list', t => {
   )
 })
 
+
 test('lisp-parser :: symbolism', t => {
   testParse(t, '(list (def foo 12) foo)', ['list', ['def', 'foo', '12'], 'foo'], [12, 12])
   testParse(t, '(block (def foo 12) foo)', ['block', ['def', 'foo', '12'], 'foo'], 12)
@@ -99,4 +100,34 @@ test('lisp-parser :: symbolism', t => {
         ['def', 'foo', '8']],
       'foo'],
     12)
+})
+
+
+test.skip('lisp-parser :: lambda', t => {
+  testParse(t, `
+    (block
+      (def double (lambda (x) (* x 2)))
+      (double 8))`,
+    ['block',
+      ['def', 'double', ['lambda', ['x'], ['*', 'x', '2']]],
+      ['double', '8']],
+    16)
+})
+
+test('lisp-parser :: util :: buildLambdaString', t => {
+  const params = ['x', 'y']
+  const body = ['*', 'x', 'y']
+  const rest = [params, body]
+
+  const string = buildLambdaString(rest)
+  console.log(string)
+  t.is(string,`
+    (x, y) => {
+      body = [
+        'block',
+          ['def', 'x', x],['def', 'y', y]
+          ...[["*","x","y"]]
+      ]
+      return evaluate()
+    }`)
 })

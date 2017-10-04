@@ -1,4 +1,4 @@
-/* jshint -W061, -W086 */
+/* jshint -W061, -W054, -W086 */
 
 import { generate } from 'pegjs'
 
@@ -93,6 +93,24 @@ function makeHelper(definitions, evoke) {
         definitions.pop()
         return finalValue
       }
+      case 'lambda': {
+        if (rest.length < 2) {
+          return { error: '`lambda` must have an arguments list and at least one statement' }
+        } else {
+          const params = rest[0]
+          let body = rest[1]
+          // const fn = eval(`
+          //   (${params.join(', ')}) => {
+          //     body = [
+          //       'block',
+          //         ...${params.map(p => { return ['def', '"' + p + '"', p] })}
+          //         ...body
+          //     ]
+          //     return evaluate()
+          //   }`)
+          // TODO implement lambda!
+        }
+      }
       case '+': {
         first = add
         break
@@ -175,7 +193,36 @@ function divide(...args) {
   }
 }
 
-export function evaluate(root, env) {
+export function buildLambdaString(rest) {
+  const params = rest[0]
+  // [ 'def', 'x', x ]
+  // const locals = params.map(p => { return ['"def"', `"${p}"`, p] })
+  const locals = params.map(p => { return `['def', '${p}', ${p}]` })
+  const body = [
+    'block',
+      ...locals,
+      ...rest.slice(1)
+  ]
+  return `
+    (${params.join(', ')}) => {
+      body = [
+        'block',
+          ${locals}
+          ...${JSON.stringify(rest.slice(1))}
+      ]
+      return evaluate()
+    }`
+}
+
+export function globalEvaluate(root) {
+  const globalContext = [{
+    list: (...args) => { return args },
+    parent: undefined  // written here for clarity
+  }]
+  return evaluate(globalContext)
+}
+
+export function evaluate(semanticRoot, context) {
   const definitions = [{
     list: (...args) => { return args }
   }]
@@ -183,7 +230,7 @@ export function evaluate(root, env) {
   const evoke = makeEvoke(definitions)
   const helper = makeHelper(definitions, evoke)
 
-  return helper(root)
+  return helper(semanticRoot)
 }
 
 export default function (string, environment) {
