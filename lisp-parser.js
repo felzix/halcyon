@@ -1,4 +1,4 @@
-/* jshint -W061 */
+/* jshint -W061, -W086 */
 
 import { generate } from 'pegjs'
 
@@ -86,11 +86,16 @@ function makeEvoke(definitions) {
   }
 }
 
-function makeHelper(definitions) {
-  return tree => {
-    if (tree.length === 0) return []
+function makeHelper(definitions, evoke) {
+  const helper = tree => {
+    if (typeof tree !== 'object') {
+      return evoke(tree)
+    } else if (tree.length === 0){
+      return []
+    }
 
     let first = tree[0]
+    let rest = tree.slice(1)
     // if first is built-in then pass off to that
     // if first is in definitions then pass off to that
     //     if that's a macro then do macro-y things
@@ -98,16 +103,25 @@ function makeHelper(definitions) {
     //     otherwise error
     switch (first) {
       case "quote": {
-        return tree.slice(1)  // return the rest without interpretation
+        if (rest.length !== 1) {
+          return { error: '`quote` must have exactly 1 argument' }
+        } else {
+          return rest[0]  // don't interpret the rest
+        }
+      }
+      case "+": {
+        first = add
+        break
+      }
+      default: {
+        first = evoke(first)
       }
     }
 
-    first = evoke(first)
     switch (typeof first) {
       case 'function': {
-        // TODO evaluate arguments first then return first(*args)
-        return first
-        break
+        rest = rest.map(helper)
+        return first(...rest)
       }
       case 'macro': {
         // TODO this is theoretical right now
@@ -125,13 +139,23 @@ function makeHelper(definitions) {
       }
     }
   }
+
+  return helper
+}
+
+function add(...args) {
+  if (args.length === 0) {
+    return 0
+  } else {
+    return args.reduce((x, y) => { return x + y })
+  }
 }
 
 export function evaluate(root, env) {
   const definitions = [ {} ]
 
   const evoke = makeEvoke(definitions)
-  const helper = makeHelper(definitions)
+  const helper = makeHelper(definitions, evoke)
 
   switch (typeof root) {
     case "string": {
