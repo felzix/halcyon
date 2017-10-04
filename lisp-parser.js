@@ -6,8 +6,8 @@ import { generate } from 'pegjs'
 const grammar = `
 sexpr
   = _ a:atom _ { return a }
-  / "'" args:sexpr+ { return ['quote'].concat(args) }
-  / "(" _ args:sexpr* _ ")" { return args === null ? [] : args }
+  / _ "'" args:sexpr+ _ { return ['quote'].concat(args) }
+  / _ "(" _ args:sexpr* _ ")"_  { return args === null ? [] : args }
 
 atom
   = float
@@ -44,7 +44,7 @@ export function parse(string) {
 function makeEvoke(definitions) {
   return symbol => {
     // lisp
-    for (let i = definitions.length - 1; i > 0; i--) {
+    for (let i = definitions.length - 1; i >= 0; i--) {
       const meaning = definitions[i][symbol]
       if (typeof meaning !== 'undefined') {
         return meaning
@@ -161,19 +161,14 @@ function divide(...args) {
 }
 
 export function evaluate(root, env) {
-  const definitions = [ {} ]
+  const definitions = [{
+    list: (...args) => { return args }
+  }]
 
   const evoke = makeEvoke(definitions)
   const helper = makeHelper(definitions, evoke)
 
-  switch (typeof root) {
-    case "string": {
-      return evoke(root)
-    }
-    case "object": {
-      return helper(root)
-    }
-  }
+  return helper(root)
 }
 
 export default function (string, environment) {

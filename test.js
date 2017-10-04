@@ -58,6 +58,7 @@ test('lisp-parser :: javascript native', t => {
 
 test('lisp-parser :: nested', t => {
   testParse(t, '(+ 5 (+ 2 7))', ['+', '5', ['+', '2', '7']], 5+(2+7))
+  testParse(t, '(+ (+ 2 7) (+ 7 8))', ['+', ['+', '2', '7'], ['+', '7', '8']], (2+7)+(7+8))
 })
 
 test('lisp-parser :: quote', t => {
@@ -67,11 +68,23 @@ test('lisp-parser :: quote', t => {
   testParse(t, '(quote (1))', ['quote', ['1']], ['1'])
   testParse(t, '(quote (1 2 3))', ['quote', ['1', '2', '3']], ['1', '2', '3'])
   testParse(t, "'(1 2 3)", ['quote', ['1', '2', '3']], ['1', '2', '3'])
-})
-
-test('lisp-parser :: quote nested', t => {
   testParse(t, '(quote (+ 1 (+ 2 3)))',
     ['quote', ['+', '1', ['+', '2', '3']]],
     ['+', '1', ['+', '2', '3']]
   )
+})
+
+test('lisp-parser :: list', t => {
+  testParse(t, '(list)', ['list'], [])
+  testParse(t, '(list ())', ['list', []], [[]])
+  testParse(t, '(list 1 2 3)', ['list', '1', '2', '3'], [1, 2, 3])
+  testParse(t, '(list (list 1 2) (list 3) (list))',
+    ['list', ['list', '1', '2'], ['list', '3'], ['list']],
+    [[1, 2], [3], []]
+  )
+})
+
+
+test('lisp-parser :: global def', t => {
+  t.pass()
 })
