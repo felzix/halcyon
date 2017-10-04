@@ -100,15 +100,9 @@ function makeHelper(context) {
         } else {
           const params = rest[0]
           let body = rest[1]
-          // const fn = eval(`
-          //   (${params.join(', ')}) => {
-          //     body = [
-          //       'block',
-          //         ...${params.map(p => { return ['def', '"' + p + '"', p] })}
-          //         ...body
-          //     ]
-          //     return evaluate()
-          //   }`)
+          // context comes from the local scope right here
+          const fn = eval(buildLambdaString(rest))
+          return fn
           // TODO implement lambda!
         }
       }
@@ -157,22 +151,15 @@ function makeArithmetic(symbol, one, many) {
 
 export function buildLambdaString(rest) {
   const params = rest[0]
-  // [ 'def', 'x', x ]
-  // const locals = params.map(p => { return ['"def"', `"${p}"`, p] })
   const locals = params.map(p => { return `['def', '${p}', ${p}]` })
-  const body = [
-    'block',
-      ...locals,
-      ...rest.slice(1)
-  ]
+  const body = rest.slice(1)
   return `
     (${params.join(', ')}) => {
       body = [
         'block',
-          ${locals}
-          ...${JSON.stringify(rest.slice(1))}
-      ]
-      return evaluate()
+          ${locals}]
+      body.concat(${JSON.stringify(rest.slice(1))})
+      return internalEval(body, context)
     }`
 }
 
