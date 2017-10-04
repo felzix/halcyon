@@ -4,44 +4,6 @@ import { generate } from 'pegjs'
 
 
 const grammar = `
-{
-  function log(x) {
-    console.log(x)
-  }
-
-  const definitions = [{}]
-  let scope = 0
-
-  function evoke(symbol) {
-    // lisp
-    for (let i = definitions.length; i > 0; i--) {
-      const meaning = definitions[scope][symbol]
-      if (typeof meaning !== 'undefined') {
-        return meaning
-      }
-    }
-    // javascript
-    return eval(symbol)
-  }
-
-  function def(symbol, meaning) {
-    definitions[scope][symbol] = meaning
-  }
-
-  function moreScope() {
-    definitions.push({})
-    scope += 1
-  }
-
-  function lessScope() {
-    definitions.pop()
-    scope -= 1
-  }
-}
-
-start
-  = sexpr
-
 sexpr
   = _ a:atom _ { return a }
   / "'" args:sexpr+ { return ['quote'].concat(args) }
