@@ -142,7 +142,11 @@ export function evaluate(tree, context) {
       }
     }
     default: {
-      first = evoke(first, context)
+      if (Array.isArray(first)) {
+        first = evaluate(first, context)
+      } else {
+        first = evoke(first, context)
+      }
     }
   }
 

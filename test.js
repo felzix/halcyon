@@ -130,15 +130,19 @@ test('lisp-parser :: lambda', t => {
     16)
 })
 
-test('lisp-parser :: more lambda', t => {
+test('lisp-parser :: closure', t => {
   const result = parseAndEval(`
     (block
       (def outer (lambda (x)
-        console.log(x)
         (lambda (y)
-          (console.log y)
           (+ x y))))
       (def jazz (outer 9))
       (jazz 3))`)
   t.is(result, 9+3)
+})
+
+test('lisp-parser :: lambda as first argument', t => {
+  const result = parseAndEval(`
+    ((lambda (x) (* x 10)) 8)`)
+  t.is(result, 10*8)
 })
