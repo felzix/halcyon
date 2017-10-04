@@ -41,14 +41,14 @@ export function parse(string) {
   return parser.parse(string)
 }
 
-function evoke(context, symbol) {
+function evoke(symbol, context) {
   const parent = context.parent
   const definitions = context.definitions
   const meaning = definitions[symbol]
   if (typeof meaning !== 'undefined') {
     return meaning
   } else if (typeof parent !== 'undefined') {
-    return evoke(parent, symbol)
+    return evoke(symbol, parent)
   } else {
     // javascript
     return eval(symbol)
@@ -99,7 +99,7 @@ export function evaluate(tree, context) {
   context = typeof context === 'undefined' ? Object.assign({}, defaultContext) : context
 
   if (typeof tree !== 'object') {
-    return evoke(context, tree)
+    return evoke(tree, context)
   } else if (tree.length === 0){
     return []
   }
@@ -144,7 +144,7 @@ export function evaluate(tree, context) {
       }
     }
     default: {
-      first = evoke(context, first)
+      first = evoke(first, context)
     }
   }
 
@@ -166,6 +166,6 @@ export function evaluate(tree, context) {
 export default function (string) {
   const tree = parse(string)
   if (typeof tree !== 'undefined') {
-    return evaluate(tree)
+    return evaluate(tree, Object.assign({}, defaultContext))
   }
 }
