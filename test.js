@@ -10,29 +10,28 @@ test('bar', async t => {
 test('lisp-parser :: empty string', t => {
   const tree = parse('')
   t.deepEqual(tree, undefined)
-  t.deepEqual(evaluate(tree, {}), undefined)
 })
 
 test('lisp-parser :: empty list', t => {
   const tree = parse('()')
   t.deepEqual(tree, [])
-  // t.deepEqual(evaluate(tree), [])
+  t.deepEqual(evaluate(tree), [])
 })
 
 test('lisp-parser :: symbol', t => {
   const tree = parse('Math.sqrt')
-  t.deepEqual(tree, 'Math.sqrt')
-  // t.deepEqual(evaluate(Math.sqrt), Math.sqrt)
+  t.is(tree, 'Math.sqrt')
+  t.deepEqual(evaluate(tree), Math.sqrt)
 })
 
 test('lisp-parser :: integer', t => {
   const tree = parse('17')
-  t.deepEqual(tree, '17')
+  t.is(tree, '17')
 })
 
 test('lisp-parser :: float', t => {
   const tree = parse('17.19')
-  t.deepEqual(tree, '17.19')
+  t.is(tree, '17.19')
 })
 
 test('lisp-parser :: addition', t => {

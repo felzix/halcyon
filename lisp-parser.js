@@ -1,3 +1,5 @@
+/* jshint -W061 */
+
 import { generate } from 'pegjs'
 
 
@@ -70,11 +72,80 @@ export function parse(string) {
   return parser.parse(string)
 }
 
-export function evaluate(tree, env) {
+function makeEvoke(definitions) {
+  return symbol => {
+    // lisp
+    for (let i = definitions.length - 1; i > 0; i--) {
+      const meaning = definitions[i][symbol]
+      if (typeof meaning !== 'undefined') {
+        return meaning
+      }
+    }
+    // javascript
+    return eval(symbol)
+  }
+}
 
+function makeHelper(definitions) {
+  return tree => {
+    if (tree.length === 0) return []
+
+    let first = tree[0]
+    // if first is built-in then pass off to that
+    // if first is in definitions then pass off to that
+    //     if that's a macro then do macro-y things
+    //     if that's a function then evaluate
+    //     otherwise error
+    switch (first) {
+      case "quote": {
+        return tree.slice(1)  // return the rest without interpretation
+      }
+    }
+
+    first = evoke(first)
+    switch (typeof first) {
+      case 'function': {
+        // TODO evaluate arguments first then return first(*args)
+        return first
+        break
+      }
+      case 'macro': {
+        // TODO this is theoretical right now
+        break
+      }
+      default: {
+        // TODO throw an error
+      }
+    }
+
+    for (let i = 0; i < tree.length; i++) {
+      const element = tree[i]
+      switch(element) {
+        case "+":
+      }
+    }
+  }
+}
+
+export function evaluate(root, env) {
+  const definitions = [ {} ]
+
+  const evoke = makeEvoke(definitions)
+  const helper = makeHelper(definitions)
+
+  switch (typeof root) {
+    case "string": {
+      return evoke(root)
+    }
+    case "object": {
+      return helper(root)
+    }
+  }
 }
 
 export default function (string, environment) {
   const tree = parse(string)
-  return evaluate(tree, environment)
+  if (typeof tree !== 'undefined') {
+    return evaluate(tree, environment)
+  }
 }
