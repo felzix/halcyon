@@ -65,11 +65,6 @@ function makeHelper(definitions, evoke) {
 
     let first = tree[0]
     let rest = tree.slice(1)
-    // if first is built-in then pass off to that
-    // if first is in definitions then pass off to that
-    //     if that's a macro then do macro-y things
-    //     if that's a function then evaluate
-    //     otherwise error
     switch (first) {
       case "quote": {
         if (rest.length !== 1) {
