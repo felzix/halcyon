@@ -6,7 +6,7 @@ import store from './store'
 import { pushHistory, setHistoricalResult, recordPageHeight, setCliElement } from './reducer'
 import { text, uploadConfig } from './results'
 import { HELPTEXT } from './constants'
-import lispParser from './lisp-parser'
+import { makeInterpreter } from './lisp-parser'
 
 
 // this wrapper is necessary for Provider to work right
@@ -326,7 +326,7 @@ class CommandLineInput extends React.Component {
 
   recordCommand(command) {
     const historicalIndex = this.props.history.length
-    interpretCommand(command).then(result => {
+    interpretCommand(command, this.props.lispInterpreter).then(result => {
       this.props.setHistoricalResult(historicalIndex, result)
     }).catch(seriousErr => {
       console.error(seriousErr)
@@ -412,7 +412,8 @@ History = connect(
 CommandLineInput = connect(
   state => {
     return {
-      history: state.history
+      history: state.history,
+      lispInterpreter: state.lispInterpreter
     }
   },
   dispatch => {
@@ -430,7 +431,7 @@ CommandLineInput = connect(
   })(CommandLineInput)
 
 const globalEval = eval  // this magically makes eval's scope global
-function interpretCommand(command) {
+function interpretCommand(command, lispInterpreter) {
   return new Promise(resolve => {
     switch(command) {
       case "help":
@@ -444,7 +445,7 @@ function interpretCommand(command) {
           const language = store.getState().shellLanguage
           switch(language) {
             case 'javascript': resolve(interpretJavascript(command)); break
-            case 'lisp': resolve(interpretLisp(command)); break
+            case 'lisp': resolve(interpretLisp(command, lispInterpreter)); break
           }
         } catch(err) {
           resolve(text(err.stack, 'red'))
@@ -453,8 +454,8 @@ function interpretCommand(command) {
   })
 }
 
-function interpretLisp(command) {
-  return text(lispParser(command))
+function interpretLisp(command, lispInterpreter) {
+  return text(lispInterpreter(command))
 }
 
 
