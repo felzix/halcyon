@@ -12,16 +12,23 @@ sexpr
 atom
   = float
   / integer
+  / boolean
   / symbol
 
 symbol
-  = [a-zA-Z.+]+ [a-zA-Z.+0-9]* { return text() }
+  = symbolic+ (symbolic[0-9])* { return text() }
+
+symbolic = [a-zA-Z.+*/-]
 
 float
   = [0-9]+ "." [0-9]+ { return text() }
 
 integer
   = [0-9]+ { return text() }
+
+boolean
+  = "true" { return text() }
+  / "false" { return text() }
 
 _ = [ \\t\\n]*
 `
@@ -75,6 +82,18 @@ function makeHelper(definitions, evoke) {
         first = add
         break
       }
+      case "-": {
+        first = subtract
+        break
+      }
+      case "*": {
+        first = multiply
+        break
+      }
+      case "/": {
+        first = divide
+        break
+      }
       default: {
         first = evoke(first)
       }
@@ -107,9 +126,37 @@ function makeHelper(definitions, evoke) {
 
 function add(...args) {
   if (args.length === 0) {
-    return 0
+    return { error: '`+` must have at least 1 argument' }
   } else {
     return args.reduce((x, y) => { return x + y })
+  }
+}
+
+function subtract(...args) {
+  if (args.length === 0) {
+    return { error: '`-` must have at least 1 argument' }
+  } else if (args.length === 1){
+    return -args[0]
+  } else {
+    return args.reduce((x, y) => { return x - y })
+  }
+}
+
+function multiply(...args) {
+  if (args.length === 0) {
+    return { error: '`*` must have at least 1 argument' }
+  } else {
+    return args.reduce((x, y) => { return x * y })
+  }
+}
+
+function divide(...args) {
+  if (args.length === 0) {
+    return { error: '`/` must have at least 1 argument' }
+  } else if (args.length === 1) {
+    return 1 / args[0]
+  } else {
+    return args.reduce((x, y) => { return x / y })
   }
 }
 
