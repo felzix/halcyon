@@ -55,86 +55,6 @@ function evoke(context, symbol) {
   }
 }
 
-function makeHelper(context) {
-  const helper = tree => {
-    if (typeof tree !== 'object') {
-      return evoke(context, tree)
-    } else if (tree.length === 0){
-      return []
-    }
-
-    let first = tree[0]
-    let rest = tree.slice(1)
-    switch (first) {
-      case "quote": {
-        if (rest.length !== 1) {
-          return { error: '`quote` must have exactly 1 argument' }
-        } else {
-          return rest[0]  // don't interpret the rest
-        }
-      }
-      case 'def': {
-        if (rest.length !== 2) {
-          return { error: '`def` must have exactly 2 arguments' }
-        } else {
-          const symbol = rest[0]
-          const value = helper(rest[1])
-          context.definitions[symbol] = value
-          return value
-        }
-        break
-      }
-      case 'block': {
-        const parent = context
-        context = { parent, definitions: {} }
-        let finalValue
-        for (let i = 0; i < rest.length; i++) {
-          finalValue = helper(rest[i])
-        }
-        console.log(context)
-        context = parent
-        return finalValue
-      }
-      case 'lambda': {
-        if (rest.length < 2) {
-          return { error: '`lambda` must have an arguments list and at least one statement' }
-        } else {
-          const params = rest[0]
-          let body = rest[1]
-          // context comes from the local scope right here
-          return eval(buildLambdaString(rest))
-        }
-      }
-      default: {
-        first = evoke(context, first)
-      }
-    }
-
-    switch (typeof first) {
-      case 'function': {
-        rest = rest.map(helper)
-        return first(...rest)
-      }
-      case 'macro': {
-        // TODO this is theoretical right now
-        break
-      }
-      default: {
-        // TODO throw an error
-      }
-    }
-
-    for (let i = 0; i < tree.length; i++) {
-      const element = tree[i]
-      switch(element) {
-        case "+":
-      }
-    }
-  }
-
-  return helper
-}
-
 function makeArithmetic(symbol, one, many) {
   many = typeof many === 'undefined' ? one : many
   return function(...args) {
@@ -158,7 +78,7 @@ export function buildLambdaString(rest) {
         'block',
           ${locals}]
       body = body.concat(${JSON.stringify(rest.slice(1))})
-      return internalEval(body, context)
+      return evaluate(body, context)
     }`
 }
 
@@ -175,14 +95,72 @@ const defaultContext = {
   }
 }
 
-export function evaluate(root, context) {
+export function evaluate(tree, context) {
   context = typeof context === 'undefined' ? Object.assign({}, defaultContext) : context
-  return internalEval(root, context)
-}
 
-export function internalEval(semanticRoot, context) {
-  const helper = makeHelper(context)
-  return helper(semanticRoot)
+  if (typeof tree !== 'object') {
+    return evoke(context, tree)
+  } else if (tree.length === 0){
+    return []
+  }
+
+  let first = tree[0]
+  let rest = tree.slice(1)
+  switch (first) {
+    case "quote": {
+      if (rest.length !== 1) {
+        return { error: '`quote` must have exactly 1 argument' }
+      } else {
+        return rest[0]  // don't interpret the rest
+      }
+    }
+    case 'def': {
+      if (rest.length !== 2) {
+        return { error: '`def` must have exactly 2 arguments' }
+      } else {
+        const symbol = rest[0]
+        const value = evaluate(rest[1], context)
+        context.definitions[symbol] = value
+        return value
+      }
+      break
+    }
+    case 'block': {
+      const blockContext = { parent: context, definitions: {} }
+      let finalValue
+      for (let i = 0; i < rest.length; i++) {
+        finalValue = evaluate(rest[i], blockContext)
+      }
+      return finalValue
+    }
+    case 'lambda': {
+      if (rest.length < 2) {
+        return { error: '`lambda` must have an arguments list and at least one statement' }
+      } else {
+        const params = rest[0]
+        let body = rest[1]
+        // context comes from the local scope right here
+        return eval(buildLambdaString(rest))
+      }
+    }
+    default: {
+      first = evoke(context, first)
+    }
+  }
+
+  switch (typeof first) {
+    case 'function': {
+      rest = rest.map(s => { return evaluate(s, context) })
+      return first(...rest)
+    }
+    case 'macro': {
+      // TODO this is theoretical right now
+      break
+    }
+    default: {
+      // TODO throw an error
+    }
+  }
 }
 
 export default function (string) {
