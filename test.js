@@ -180,4 +180,6 @@ test('lisp-parser :: interpreter', t => {
   t.is(interpreter('1'), 1)
   t.is(interpreter('(quote 7)'), 7)
   t.deepEqual(interpreter('(list 6 7)'), [6, 7])
+  t.is(interpreter('(def a 19)'), 19)
+  t.is(interpreter('a'), 19)
 })
