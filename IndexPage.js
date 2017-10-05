@@ -154,9 +154,10 @@ class CommandLineInput extends React.Component {
   // Handles repeatable control characters or control sequences.
   handleKeyDown(event) {
     event.stopPropagation()
-    const {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey} = event
+    const { key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey } = event
     console.log(`down ${key} ${metaKey}`)
-    const value = this.state.value
+    let { cursorStart, cursorEnd, value } = this.state
+    const { selectionLeft, selectionRight } = this.inputElement
 
     if (key.length === 1 && !(ctrlKey || altKey || metaKey)) {  // shiftKey for capitalization etc
       return  // printable so do nothing
@@ -168,9 +169,6 @@ class CommandLineInput extends React.Component {
     switch(key) {
       case 'Backspace': {
         event.preventDefault()
-        const value = this.state.value
-        let cursorStart = this.state.cursorStart
-        const cursorEnd = this.state.cursorEnd
 
         if (cursorStart === cursorEnd) {
           cursorStart -= 1  // if no selection, delete 1 left of cursor
@@ -190,9 +188,6 @@ class CommandLineInput extends React.Component {
       }
       case 'Delete': {
         event.preventDefault()
-        const value = this.state.value
-        const cursorStart = this.state.cursorStart
-        let cursorEnd = this.state.cursorEnd
 
         if (cursorStart === cursorEnd) {
           cursorEnd += 1  // if no selection, delete 1 right of cursor
@@ -211,26 +206,37 @@ class CommandLineInput extends React.Component {
         return
       }
       case 'ArrowLeft': {
-        let { cursorStart, cursorEnd } = this.state
-        const { selectionLeft, selectionRight } = this.inputElement
-        cursorStart -= 1
-        cursorStart = cursorStart < 0 ? 0 : cursorStart
-        if (!shiftKey) {
+        if (metaKey && shiftKey) {  // select from here to beginning
+          cursorStart = 0
+        } else if (metaKey && !shiftKey) {  // go to beginning
+          cursorStart = cursorEnd = 0
+        } else if (shiftKey && !metaKey) {  // select one more to the left
+          cursorStart -= 1
+        } else {  // move one to the left
+          cursorStart -= 1
           cursorEnd = cursorStart
         }
-        this.setState({ cursorStart, cursorEnd })
+
+        let { start, end } = this.inbounds(cursorStart, cursorEnd, value.length)
+        this.setState({ cursorStart: start, cursorEnd: end })
         event.preventDefault()
         break
       }
       case 'ArrowRight': {
-        let { cursorStart, cursorEnd } = this.state
-        const { selectionLeft, selectionRight, value } = this.inputElement
-        cursorEnd += 1
-        cursorEnd = cursorEnd > value.length ? value.length : cursorEnd
-        if (!shiftKey) {
+        const max = value.length
+
+        if (metaKey && shiftKey) {  // select from here to ending
+          cursorEnd = max
+        } else if (metaKey && !shiftKey) {  // go to ending
+          cursorEnd = cursorStart = max
+        } else if (shiftKey && !metaKey) {  // select one more to the right
+          cursorEnd += 1
+        } else {  // move one to the right
+          cursorEnd += 1
           cursorStart = cursorEnd
         }
-        this.setState({ cursorStart, cursorEnd })
+        let { start, end } = this.inbounds(cursorStart, cursorEnd, max)
+        this.setState({ cursorStart: start, cursorEnd: end })
         event.preventDefault()
         break
       }
@@ -361,6 +367,14 @@ class CommandLineInput extends React.Component {
     cursorStart += growth
     cursorEnd += growth
     this.setState({ value, cursorStart, cursorEnd })
+  }
+
+  inbounds(start, end, max) {
+    start = start < 0 ? 0 : start
+    end = end < 0 ? 0 : end
+    start = start > max ? max : start
+    end = end > max ? max : end
+    return { start, end }
   }
 
   recordCommand(command) {
