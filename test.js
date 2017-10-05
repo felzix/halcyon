@@ -33,6 +33,9 @@ test('lisp-parser :: atom', t => {
   testParse(t, '17.19', 17.19, 17.19)
   testParse(t, 'true', true, true)
   testParse(t, 'false', false, false)
+  testParse(t, '"hello"', '"hello"', 'hello')
+  testParse(t, `"hi \\" girl"`, '"hi \\" girl"', 'hi " girl')
+  testParse(t, `"a \\ b"`, '"a \\\\ b"', 'a \\ b')
 })
 
 test('lisp-parser :: arithmetic', t => {

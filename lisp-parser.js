@@ -13,12 +13,11 @@ atom
   = float
   / integer
   / boolean
+  / string
   / symbol
 
 symbol
   = symbolic+ (symbolic[0-9])* { return text() }
-
-symbolic = [a-zA-Z.+*/-]
 
 float
   = [0-9]+ "." [0-9]+ { return parseFloat(text(), 10) }
@@ -30,6 +29,15 @@ boolean
   = "true" { return true }
   / "false" { return false }
 
+string
+  = '"' q:quoted* '"' { return '"' + q.join('') + '"' }
+
+quoted
+  = [^"\\\\]
+  / '\\\\"'
+  / '\\\\' { return '\\\\\\\\' }
+
+symbolic = [a-zA-Z.+*/-]
 _ = [ \\t\\n]*
 `
 const parser = generate(grammar)

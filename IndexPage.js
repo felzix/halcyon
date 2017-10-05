@@ -9,6 +9,14 @@ import { HELPTEXT } from './constants'
 import { makeInterpreter } from './lisp-parser'
 
 
+const nodes = {
+  "foo": "astro"
+}
+const data = {
+  "astro": "god is alive!!!"
+}
+
+
 // this wrapper is necessary for Provider to work right
 export default class IndexPage extends React.Component {
   render() {
@@ -458,8 +466,12 @@ function interpretLisp(command, lispInterpreter) {
   return text(lispInterpreter(command))
 }
 
-
 function interpretJavascript(command) {
   const wrappedCommand = `(function() {return ${command}})()`
   return text(globalEval(wrappedCommand))
+}
+
+function node(name) {
+  const hash = nodes[name]
+  return nodes[hash]
 }
