@@ -1,6 +1,8 @@
 import test from 'ava';
+
 import { parse, evaluate, buildLambdaString, defaultContext, makeInterpreter } from './lisp-parser'
 import parseAndEval from './lisp-parser'
+import { sha256, setNode, getNode } from './node'
 
 
 function testParse(t, string, expectedTree, expectedResult) {
@@ -230,4 +232,29 @@ test('lisp-parser :: interpreter', t => {
   t.deepEqual(interpreter('(list 6 7)'), [6, 7])
   t.is(interpreter('(def a 19)'), 19)
   t.is(interpreter('a'), 19)
+})
+
+test('node :: sha256', t => {
+  t.is(sha256('hello'),
+  '2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824')
+})
+
+test('node :: write-read', t => {
+  const nodeMap = {}
+  const dataMap = {}
+  setNode(nodeMap, dataMap, 'robert', 'todo', 'latest', 'rock on')
+  t.deepEqual(nodeMap, {
+    robert: {
+      todo: {
+        latest: '984d6f2e20e67b94efad985fc76ce3c76404a6e17229ce49ec87f048490002d2'
+      }
+    }
+  })
+  t.deepEqual(dataMap, {
+    '984d6f2e20e67b94efad985fc76ce3c76404a6e17229ce49ec87f048490002d2': 'rock on'
+  })
+
+  t.is(getNode(nodeMap, dataMap, 'robert', 'todo', 'latest'), 'rock on')
+  t.is(setNode(nodeMap, dataMap, 'robert', 'todo', 'latest', 'oranges'))
+  t.is(getNode(nodeMap, dataMap, 'robert', 'todo', 'latest'), 'oranges')
 })
