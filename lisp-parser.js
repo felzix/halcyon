@@ -6,7 +6,7 @@ import { generate } from 'pegjs'
 const grammar = `
 sexpr
   = _ a:atom _ { return a }
-  / _ "'" args:sexpr+ _ { return ['quote'].concat(args) }
+  / _ "'" arg:sexpr _ { return ['quote'].concat([arg]) }
   / _ "(" _ args:sexpr* _ ")"_  { return args === null ? [] : args }
 
 atom
@@ -115,6 +115,7 @@ export const defaultContext = {
         return args[0].slice(1)
       }
     },
+    append: (...args) => { return [].concat(...args) },
     concat: (...args) => { return ''.concat(...args) },
     '+': makeArithmetic('+', args => { return args.reduce((x, y) => { return x + y }) }),
     '-': makeArithmetic('-', args => { return -args[0] },

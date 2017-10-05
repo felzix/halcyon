@@ -71,7 +71,10 @@ test('lisp-parser :: quote', t => {
   testParse(t, '(quote 1)', ['quote', 1], 1)
   testParse(t, '(quote (1))', ['quote', [1]], [1])
   testParse(t, '(quote (1 2 3))', ['quote', [1, 2, 3]], [1, 2, 3])
-  testParse(t, "'(1 2 3)", ['quote', [1, 2, 3]], [1, 2, 3])
+  testParse(t, "'(4 5 6)", ['quote', [4, 5, 6]], [4, 5, 6])
+  testParse(t, "(list '(7 8) '(9 10))",
+    ['list', ['quote', [7, 8]], ['quote', [9, 10]]],
+    [[7, 8], [9, 10]])
   testParse(t, '(quote (+ 1 (+ 2 3)))',
     ['quote', ['+', 1, ['+', 2, 3]]],
     ['+', 1, ['+', 2, 3]]
