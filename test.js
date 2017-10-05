@@ -91,6 +91,15 @@ test('lisp-parser :: list', t => {
   )
 })
 
+// TODO need to separate out strings and symbols so strings are strings in JS before eval
+test.skip('lisp-parser :: append', t => {
+  t.deepEqual(
+    parseAndEval(`(append '(12 14) '("friends"))`),
+    // [12, 14, `"friends"`]  // NOTE this should fail but it succeeds
+    [12, 14, `friends`]  // NOTE this should succeed but it fails
+  )
+})
+
 test('lisp-parser :: headrest', t => {
   t.deepEqual(
     parseAndEval("(head)"),
