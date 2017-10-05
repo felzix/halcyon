@@ -115,12 +115,13 @@ export const defaultContext = {
         return args[0].slice(1)
       }
     },
+    concat: (...args) => { return ''.concat(...args) },
     '+': makeArithmetic('+', args => { return args.reduce((x, y) => { return x + y }) }),
     '-': makeArithmetic('-', args => { return -args[0] },
                              args => { return args.reduce((x, y) => { return x - y }) }),
     '*': makeArithmetic('*', args => { return args.reduce((x, y) => { return x * y }) }),
     '/': makeArithmetic('/', args => { return 1 / args[0] },
-                             args => { return args.reduce((x, y) => { return x / y }) }),
+                             args => { return args.reduce((x, y) => { return x / y }) })
   }
 }
 
