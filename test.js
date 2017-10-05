@@ -2,7 +2,7 @@ import test from 'ava';
 
 import { parse, evaluate, buildLambdaString, defaultContext, makeInterpreter } from './lisp-parser'
 import parseAndEval from './lisp-parser'
-import { sha256, setNode, getNode } from './node'
+import { sha256, setNode, getNode, decodeNodeURI, encodeFullNodeURI } from './node'
 
 
 function testParse(t, string, expectedTree, expectedResult) {
@@ -257,4 +257,17 @@ test('node :: write-read', t => {
   t.is(getNode(nodeMap, dataMap, 'robert', 'todo', 'latest'), 'rock on')
   t.is(setNode(nodeMap, dataMap, 'robert', 'todo', 'latest', 'oranges'))
   t.is(getNode(nodeMap, dataMap, 'robert', 'todo', 'latest'), 'oranges')
+})
+
+test('node :: encode-decode', t => {
+  const owner = 'robert', name = 'todo', version = 'latest'
+  t.is(encodeFullNodeURI(owner, name, version), 'node://robert+todo:latest')
+  t.deepEqual(decodeNodeURI('node://robert+todo:latest'),
+    { owner, name, version })
+  t.deepEqual(decodeNodeURI('node://robert+todo'),
+    { owner, name, version: 'unversioned' })
+  t.deepEqual(decodeNodeURI('node://todo:latest', owner),
+    { owner, name, version })
+  t.deepEqual(decodeNodeURI('node://todo', owner),
+    { owner, name, version: 'unversioned' })
 })
