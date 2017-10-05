@@ -163,7 +163,7 @@ class CommandLineInput extends React.Component {
       return  // printable so do nothing
     }
 
-    event.preventDefault()
+    event.preventDefault()  // here instead of earlier so the event will propagate if it's printable
 
     // NOTE: Every event here has a match in handleKeyUp so beware duplication
     switch(key) {
