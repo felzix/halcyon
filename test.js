@@ -1,8 +1,11 @@
 import test from 'ava';
+import uuid4 from 'uuid'
+import { unlink } from 'fs'
 
 import { parse, evaluate, buildLambdaString, defaultContext, makeInterpreter } from './lisp-parser'
 import parseAndEval from './lisp-parser'
-import { sha256, setNode, getNode, decodeNodeURI, encodeFullNodeURI } from './node'
+import { sha256, setNode, getNode, decodeNodeURI, encodeFullNodeURI,
+         readJsonFile, writeJsonFile } from './node'
 
 
 function testParse(t, string, expectedTree, expectedResult) {
@@ -239,7 +242,7 @@ test('node :: sha256', t => {
   '2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824')
 })
 
-test('node :: write-read', t => {
+test('node :: set-get', t => {
   const nodeMap = {}
   const dataMap = {}
   setNode(nodeMap, dataMap, 'robert', 'todo', 'latest', 'rock on')
@@ -270,4 +273,18 @@ test('node :: encode-decode', t => {
     { owner, name, version })
   t.deepEqual(decodeNodeURI('node://todo', owner),
     { owner, name, version: 'unversioned' })
+})
+
+test('node :: write-read', t => {
+  const nodeFile = `/tmp/halcyon-node-${uuid4()}`
+  const dataFile = `/tmp/halcyon-data-${uuid4()}`
+  const nodeMap = {}
+  const dataMap = {}
+  t.is(setNode(nodeMap, dataMap, 'robert', 'todo', 'latest', 'rock on'))
+  writeJsonFile(nodeFile, nodeMap)
+  writeJsonFile(dataFile, dataMap)
+  t.deepEqual(readJsonFile(nodeFile), nodeMap)
+  t.deepEqual(readJsonFile(dataFile), dataMap)
+  unlink(nodeFile)
+  unlink(dataFile)
 })
