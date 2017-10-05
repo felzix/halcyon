@@ -274,17 +274,42 @@ class CommandLineInput extends React.Component {
           this.setState({ cursorStart: 0, cursorEnd: value.length })
         } else if (ctrlKey && !(shiftKey || altKey || metaKey)) {  // start of line
            this.setState({ cursorStart: 0, cursorEnd: 0})
-        }}
+        }
         break
+      }
+      case 'c': {
+        if (metaKey && !(ctrlKey || shiftKey || altKey)) {  // copy to clipboard
+          document.execCommand("copy")
+        } else if (ctrlKey && !(shiftKey || altKey || metaKey)) {  // start of line
+           this.setState({ cursorStart: 0, cursorEnd: 0})
+        }
+        break
+      }
       case 'e': {
         if (ctrlKey && !(shiftKey || altKey || metaKey)) {  // end of line
           this.setState({ cursorStart: value.length, cursorEnd: value.length})
-        }}
+        }
         break
+      }
       case 'r': {
         if (metaKey && !(shiftKey || altKey || ctrlKey)) {  // reload page
          window.location.reload()
        }
+       break
+      }
+      case 'v': {
+        if (metaKey && !(ctrlKey || shiftKey || altKey)) {  // copy to clipboard
+          document.execCommand("paste")
+          // TODO cursors
+        }
+        break
+      }
+      case 'x': {
+        if (metaKey && !(ctrlKey || shiftKey || altKey)) {  // copy to clipboard
+          document.execCommand("cut")
+          // TODO cursors
+        }
+        break
       }
     }
   }
@@ -292,7 +317,7 @@ class CommandLineInput extends React.Component {
   // Handles printable characters.
   handleKeyboard(event) {
     event.stopPropagation()
-    const {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey} = event
+    const { key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey } = event
     console.log(`press ${key} ${ctrlKey}`)
     let value = this.state.value
     if (key.length > 1) {  // non-printable so let handleKeyUp deal with it
@@ -302,11 +327,8 @@ class CommandLineInput extends React.Component {
       return
     }
 
-    // TODO add the key based on the text cursor position
-    value += key
-    const cursorStart = this.state.cursorStart + 1
-    const cursorEnd = this.state.cursorEnd + 1
-    this.setState({ value, cursorStart, cursorEnd })
+    this.addText(key)
+    event.preventDefault()
   }
 
   handleClick(event) {
@@ -330,6 +352,15 @@ class CommandLineInput extends React.Component {
       this.setState({ value: '' })
     }
     event.preventDefault();
+  }
+
+  addText(text) {
+    let { cursorStart, cursorEnd, value } = this.state
+    const growth = text.length
+    value = value.slice(0, cursorStart) + text + value.slice(cursorStart)
+    cursorStart += growth
+    cursorEnd += growth
+    this.setState({ value, cursorStart, cursorEnd })
   }
 
   recordCommand(command) {
