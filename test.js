@@ -203,6 +203,17 @@ test('lisp-parser :: lambda multiparam', t => {
     24)
 })
 
+test('lisp-parser :: lambda w/ string', t => {
+  testParse(t, `
+    (block
+      (def x (lambda (x) (concat x ".")))
+      (x "A sentence"))`,
+    ['block',
+      ['def', 'x', ['lambda', ['x'], ['concat', 'x', '"."']]],
+      ['x', '"A sentence"']],
+    'A sentence.')
+})
+
 test('lisp-parser :: lambda wrong args', t => {
   testParse(t, `
     (block
