@@ -15,11 +15,29 @@ function testParse(t, string, expectedTree, expectedResult) {
   t.deepEqual(evaluate(tree, defaultContext), expectedResult)
 }
 
+// built-ins
+const block = Symbol.for('block')
+const list = Symbol.for('list')
+const quote = Symbol.for('quote')
+const def = Symbol.for('def')
+const lambda = Symbol.for('lambda')
+const concat = Symbol.for('concat')
+const add = Symbol.for('+')
+const subtract = Symbol.for('-')
+const multiply = Symbol.for('*')
+const divide = Symbol.for('/')
 
-test('bar', async t => {
-	const bar = Promise.resolve('bar');
-	t.deepEqual(await bar, 'bar');
-});
+
+// user-defined
+const m = Symbol.for('m')
+const x = Symbol.for('x')
+const y = Symbol.for('y')
+const double = Symbol.for('double')
+const foo = Symbol.for('foo')
+
+// javascript
+const math_sqrt = Symbol.for('Math.sqrt')
+
 
 test('lisp-parser :: empty string', t => {
   const tree = parse('')
@@ -31,7 +49,7 @@ test('lisp-parser :: empty list', t => {
 })
 
 test('lisp-parser :: symbol', t => {
-  testParse(t, 'Math.sqrt', 'Math.sqrt', Math.sqrt)
+  testParse(t, 'Math.sqrt', math_sqrt, Math.sqrt)
 })
 
 test('lisp-parser :: atom', t => {
@@ -39,60 +57,60 @@ test('lisp-parser :: atom', t => {
   testParse(t, '17.19', 17.19, 17.19)
   testParse(t, 'true', true, true)
   testParse(t, 'false', false, false)
-  testParse(t, '"hello"', '"hello"', 'hello')
-  testParse(t, `"hi \\" girl"`, '"hi \\" girl"', 'hi " girl')
-  testParse(t, `"a \\ b"`, '"a \\\\ b"', 'a \\ b')
+  testParse(t, '"hello"', 'hello', 'hello')
+  testParse(t, `"hi \\" girl"`, 'hi " girl', 'hi " girl')
+  testParse(t, `"a \\ b"`, 'a \\ b', 'a \\ b')
 })
 
 test('lisp-parser :: arithmetic', t => {
-  testParse(t, '(+)', ['+'], { error: '`+` must have at least 1 argument' })
-  testParse(t, '(+ 5)', ['+', 5], 5)
-  testParse(t, '(+ 3 4 5 6)', ['+', 3, 4, 5, 6], 3+4+5+6)
+  testParse(t, '(+)', [add], { error: '`+` must have at least 1 argument' })
+  testParse(t, '(+ 5)', [add, 5], 5)
+  testParse(t, '(+ 3 4 5 6)', [add, 3, 4, 5, 6], 3+4+5+6)
 
-  testParse(t, '(-)', ['-'], { error: '`-` must have at least 1 argument' })
-  testParse(t, '(- 5)', ['-', 5], -5)
-  testParse(t, '(- 3 4 5 6)', ['-', 3, 4, 5, 6], 3-4-5-6)
+  testParse(t, '(-)', [subtract], { error: '`-` must have at least 1 argument' })
+  testParse(t, '(- 5)', [subtract, 5], -5)
+  testParse(t, '(- 3 4 5 6)', [subtract, 3, 4, 5, 6], 3-4-5-6)
 
-  testParse(t, '(*)', ['*'], { error: '`*` must have at least 1 argument' })
-  testParse(t, '(* 5)', ['*', 5], 5)
-  testParse(t, '(* 3 4 5 6)', ['*', 3, 4, 5, 6], 3*4*5*6)
+  testParse(t, '(*)', [multiply], { error: '`*` must have at least 1 argument' })
+  testParse(t, '(* 5)', [multiply, 5], 5)
+  testParse(t, '(* 3 4 5 6)', [multiply, 3, 4, 5, 6], 3*4*5*6)
 
-  testParse(t, '(/)', ['/'], { error: '`/` must have at least 1 argument' })
-  testParse(t, '(/ 5)', ['/', 5], 1/5)
-  testParse(t, '(/ 3 4 5 6)', ['/', 3, 4, 5, 6], 3/4/5/6)
+  testParse(t, '(/)', [divide], { error: '`/` must have at least 1 argument' })
+  testParse(t, '(/ 5)', [divide, 5], 1/5)
+  testParse(t, '(/ 3 4 5 6)', [divide, 3, 4, 5, 6], 3/4/5/6)
 })
 
 test('lisp-parser :: javascript native', t => {
-  testParse(t, '(Math.sqrt 4)', ['Math.sqrt', 4], Math.sqrt(4))
+  testParse(t, '(Math.sqrt 4)', [math_sqrt, 4], Math.sqrt(4))
 })
 
 test('lisp-parser :: nested', t => {
-  testParse(t, '(+ 5 (+ 2 7))', ['+', 5, ['+', 2, 7]], 5+(2+7))
-  testParse(t, '(+ (+ 2 7) (+ 7 8))', ['+', ['+', 2, 7], ['+', 7, 8]], (2+7)+(7+8))
+  testParse(t, '(+ 5 (+ 2 7))', [add, 5, [add, 2, 7]], 5+(2+7))
+  testParse(t, '(+ (+ 2 7) (+ 7 8))', [add, [add, 2, 7], [add, 7, 8]], (2+7)+(7+8))
 })
 
 test('lisp-parser :: quote', t => {
-  testParse(t, '(quote)', ['quote'], {error: '`quote` must have exactly 1 argument'})
-  testParse(t, '(quote ())', ['quote', []], [])
-  testParse(t, '(quote 1)', ['quote', 1], 1)
-  testParse(t, '(quote (1))', ['quote', [1]], [1])
-  testParse(t, '(quote (1 2 3))', ['quote', [1, 2, 3]], [1, 2, 3])
-  testParse(t, "'(4 5 6)", ['quote', [4, 5, 6]], [4, 5, 6])
+  testParse(t, '(quote)', [quote], {error: '`quote` must have exactly 1 argument'})
+  testParse(t, '(quote ())', [quote, []], [])
+  testParse(t, '(quote 1)', [quote, 1], 1)
+  testParse(t, '(quote (1))', [quote, [1]], [1])
+  testParse(t, '(quote (1 2 3))', [quote, [1, 2, 3]], [1, 2, 3])
+  testParse(t, "'(4 5 6)", [quote, [4, 5, 6]], [4, 5, 6])
   testParse(t, "(list '(7 8) '(9 10))",
-    ['list', ['quote', [7, 8]], ['quote', [9, 10]]],
+    [list, [quote, [7, 8]], [quote, [9, 10]]],
     [[7, 8], [9, 10]])
   testParse(t, '(quote (+ 1 (+ 2 3)))',
-    ['quote', ['+', 1, ['+', 2, 3]]],
-    ['+', 1, ['+', 2, 3]]
+    [quote, [add, 1, [add, 2, 3]]],
+    [add, 1, [add, 2, 3]]
   )
 })
 
 test('lisp-parser :: list', t => {
-  testParse(t, '(list)', ['list'], [])
-  testParse(t, '(list ())', ['list', []], [[]])
-  testParse(t, '(list 1 2 3)', ['list', 1, 2, 3], [1, 2, 3])
+  testParse(t, '(list)', [list], [])
+  testParse(t, '(list ())', [list, []], [[]])
+  testParse(t, '(list 1 2 3)', [list, 1, 2, 3], [1, 2, 3])
   testParse(t, '(list (list 1 2) (list 3) (list))',
-    ['list', ['list', 1, 2], ['list', 3], ['list']],
+    [list, [list, 1, 2], [list, 3], [list]],
     [[1, 2], [3], []]
   )
 })
@@ -145,38 +163,38 @@ test('lisp-parser :: set-get', t => {
 })
 
 test('lisp-parser :: symbolism', t => {
-  testParse(t, '(list (def foo 12) foo)', ['list', ['def', 'foo', 12], 'foo'], [12, 12])
-  testParse(t, '(block (def foo 12) foo)', ['block', ['def', 'foo', 12], 'foo'], 12)
+  testParse(t, '(list (def foo 12) foo)', [list, [def, foo, 12], foo], [12, 12])
+  testParse(t, '(block (def foo 12) foo)', [block, [def, foo, 12], foo], 12)
   testParse(t, `
     (block
       (def foo 12)
       (block
         (def foo 8))
       foo)`,
-    ['block',
-      ['def', 'foo', 12],
-      ['block',
-        ['def', 'foo', 8]],
-      'foo'],
+    [block,
+      [def, foo, 12],
+      [block,
+        [def, foo, 8]],
+      foo],
     12)
 })
 
 test('lisp-parser :: util :: buildLambdaString', t => {
-  const params = ['x', 'y']
-  const body = ['*', 'x', 'y']
+  const params = [x, y]
+  const body = [multiply, x, y]
   const rest = [params, body]
   const context = {'parent': 'fake', 'definitions': {'foo': 'bar'}}
 
   const string = buildLambdaString(rest, context)
-  t.is(string,`
+  t.is(string, `
     (function(x, y) {
       if (arguments.length !== 2) {
         return { error: 'has ' + arguments.length + ' arg(s) should have ' + 2 + ' arg(s)'}
       }
       body = [
-        'block',
-          ['def', 'x', x],['def', 'y', y]]
-      body = body.concat([["*","x","y"]])
+        Symbol.for('block'),
+          [Symbol.for('def'), Symbol.for('x'), x],[Symbol.for('def'), Symbol.for('y'), y]]
+      body = body.concat([[Symbol.for('*'), Symbol.for('x'), Symbol.for('y')]])
       return evaluate(body, context)
     })`)
 })
@@ -186,9 +204,9 @@ test('lisp-parser :: lambda', t => {
     (block
       (def double (lambda (x) (* x 2)))
       (double 8))`,
-    ['block',
-      ['def', 'double', ['lambda', ['x'], ['*', 'x', 2]]],
-      ['double', 8]],
+    [block,
+      [def, double, [lambda, [x], [multiply, x, 2]]],
+      [double, 8]],
     16)
 })
 
@@ -197,9 +215,9 @@ test('lisp-parser :: lambda multiparam', t => {
     (block
       (def m (lambda (x y) (* x y)))
       (m 8 3))`,
-    ['block',
-      ['def', 'm', ['lambda', ['x', 'y'], ['*', 'x', 'y']]],
-      ['m', 8, 3]],
+    [block,
+      [def, m, [lambda, [x, y], [multiply, x, y]]],
+      [m, 8, 3]],
     24)
 })
 
@@ -208,9 +226,9 @@ test('lisp-parser :: lambda w/ string', t => {
     (block
       (def x (lambda (x) (concat x ".")))
       (x "A sentence"))`,
-    ['block',
-      ['def', 'x', ['lambda', ['x'], ['concat', 'x', '"."']]],
-      ['x', '"A sentence"']],
+    [block,
+      [def, x, [lambda, [x], [concat, x, '.']]],
+      [x, 'A sentence']],
     'A sentence.')
 })
 
@@ -219,17 +237,17 @@ test('lisp-parser :: lambda wrong args', t => {
     (block
       (def m (lambda (x y) (* x y)))
       (m 8))`,
-    ['block',
-      ['def', 'm', ['lambda', ['x', 'y'], ['*', 'x', 'y']]],
-      ['m', 8]],
+    [block,
+      [def, m, [lambda, [x, y], [multiply, x, y]]],
+      [m, 8]],
     { error: 'has 1 arg(s) should have 2 arg(s)' })
     testParse(t, `
       (block
         (def m (lambda (x y) (* x y)))
         (m 8 9 10))`,
-      ['block',
-        ['def', 'm', ['lambda', ['x', 'y'], ['*', 'x', 'y']]],
-        ['m', 8, 9, 10]],
+      [block,
+        [def, m, [lambda, [x, y], [multiply, x, y]]],
+        [m, 8, 9, 10]],
       { error: 'has 3 arg(s) should have 2 arg(s)' })
 })
 

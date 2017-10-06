@@ -7,7 +7,7 @@ import React from 'react'
 const grammar = `
 sexpr
   = _ a:atom _ { return a }
-  / _ "'" arg:sexpr _ { return ['quote'].concat([arg]) }
+  / _ "'" arg:sexpr _ { return [Symbol.for('quote')].concat([arg]) }
   / _ "(" _ args:sexpr* _ ")"_  { return args === null ? [] : args }
 
 atom
@@ -18,7 +18,7 @@ atom
   / symbol
 
 symbol
-  = symbolic+ (symbolic[0-9])* { return text() }
+  = symbolic+ (symbolic[0-9])* { return Symbol.for(text()) }
 
 float
   = [0-9]+ "." [0-9]+ { return parseFloat(text(), 10) }
@@ -31,18 +31,17 @@ boolean
   / "false" { return false }
 
 string
-  = '"' q:quoted* '"' { return '"' + q.join('') + '"' }
+  = '"' q:quoted* '"' { return q.join('') }
 
 quoted
   = [^"\\\\]
-  / '\\\\"'
-  / '\\\\' { return '\\\\\\\\' }
+  / '\\\\"' { return '"' }
+  / '\\\\'
 
 symbolic = [a-zA-Z.+*/-]
 _ = [ \\t\\n]*
 `
 const parser = generate(grammar)
-
 
 // Returns a (usually nested) Array of strings
 export function parse(string) {
@@ -53,14 +52,22 @@ export function parse(string) {
 function evoke(symbol, context) {
   const parent = context.parent
   const definitions = context.definitions
-  const meaning = definitions[symbol]
+  const meaning = definitions[description(symbol)]
   if (typeof meaning !== 'undefined') {
     return meaning
   } else if (typeof parent !== 'undefined') {
     return evoke(symbol, parent)
-  } else {
+  } else if (typeof symbol === 'string') {
+    return symbol
+  } else if (typeof symbol === 'number') {
+    return symbol
+  } else if (typeof symbol === 'boolean') {
+    return symbol
+  } else if (typeof symbol === 'symbol') {
     // javascript
-    return eval(symbol)
+    return eval(description(symbol))
+  } else {
+    throw `symbol "${String(symbol)}" has unhandled type "${typeof symbol}"`
   }
 }
 
@@ -78,20 +85,40 @@ function makeArithmetic(symbol, one, many) {
 }
 
 export function buildLambdaString(rest) {
-  const params = rest[0]
-  const locals = params.map(p => { return `['def', '${p}', ${p}]` })
-  const body = rest.slice(1)
+  const params = rest[0].map(p => { return description(p) })
+  const locals = params.map(p => { return `[Symbol.for('def'), Symbol.for('${p}'), ${p}]` })
+  // const body = rest.slice(1).map(statement => toJavascript(statement))
+  const body = toJavascript(rest.slice(1))
   return `
     (function(${params.join(', ')}) {
       if (arguments.length !== ${params.length}) {
         return { error: 'has ' + arguments.length + ' arg(s) should have ' + ${params.length} + ' arg(s)'}
       }
       body = [
-        'block',
+        Symbol.for('block'),
           ${locals}]
-      body = body.concat(${JSON.stringify(rest.slice(1))})
+      body = body.concat(${body})
       return evaluate(body, context)
     })`
+}
+
+// Necessary because JSON.stringify cannot handle Symbols
+function toJavascript(tree) {
+  const type = typeof tree
+  if (type === 'symbol') {
+    return `Symbol.for('${description(tree)}')`
+  } else if (type === 'string') {
+    return `"${tree}"`
+  } else if (Array.isArray(tree)) {
+    const elements = tree.map(e => { return toJavascript(e) })
+    return `[${elements.join(', ')}]`
+  } else {
+    return tree
+  }
+}
+
+function description(symbol) {
+  return String(symbol).slice(7, -1) || null
 }
 
 export const defaultContext = {
@@ -172,50 +199,51 @@ export function evaluate(tree, context) {
 
   let first = tree[0]
   let rest = tree.slice(1)
-  switch (first) {
-    case "quote": {
-      if (rest.length !== 1) {
-        return { error: '`quote` must have exactly 1 argument' }
-      } else {
-        return rest[0]  // don't interpret the rest
+  if (typeof first === 'symbol') {
+    switch (description(first)) {
+      case "quote": {
+        if (rest.length !== 1) {
+          return { error: '`quote` must have exactly 1 argument' }
+        } else {
+          return rest[0]  // don't interpret the rest
+        }
       }
-    }
-    case 'def': {
-      if (rest.length !== 2) {
-        return { error: '`def` must have exactly 2 arguments' }
-      } else {
-        const symbol = rest[0]
-        const value = evaluate(rest[1], context)
-        context.definitions[symbol] = value
-        return value
+      case 'def': {
+        if (rest.length !== 2) {
+          return { error: '`def` must have exactly 2 arguments' }
+        } else {
+          const symbol = rest[0]
+          const value = evaluate(rest[1], context)
+          context.definitions[description(symbol)] = value
+          return value
+        }
+        break
       }
-      break
-    }
-    case 'block': {
-      const blockContext = { parent: context, definitions: {} }
-      let finalValue
-      for (let i = 0; i < rest.length; i++) {
-        finalValue = evaluate(rest[i], blockContext)
+      case 'block': {
+        const blockContext = { parent: context, definitions: {} }
+        let finalValue
+        for (let i = 0; i < rest.length; i++) {
+          finalValue = evaluate(rest[i], blockContext)
+        }
+        return finalValue
       }
-      return finalValue
-    }
-    case 'lambda': {
-      if (rest.length < 2) {
-        return { error: '`lambda` must have an arguments list and at least one statement' }
-      } else {
-        const params = rest[0]
-        let body = rest[1]
-        // context comes from the local scope right here
-        return eval(buildLambdaString(rest))
+      case 'lambda': {
+        if (rest.length < 2) {
+          return { error: '`lambda` must have an arguments list and at least one statement' }
+        } else {
+          const params = rest[0]
+          let body = rest[1]
+          // context comes from the local scope right here
+          return eval(buildLambdaString(rest))
+        }
       }
-    }
-    default: {
-      if (Array.isArray(first)) {
-        first = evaluate(first, context)
-      } else {
+      default: {
         first = evoke(first, context)
+        // TODO throw error if first isn't something?
       }
     }
+  } else if (Array.isArray(first)) {
+    first = evaluate(first, context)  // first arg is a function call
   }
 
   switch (typeof first) {
