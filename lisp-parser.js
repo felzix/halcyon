@@ -99,21 +99,49 @@ export const defaultContext = {
     list: (...args) => { return args },
     head: (...args) => {
       if (args.length !== 1) {
-        return { 'error': '`head` takes exactly 1 argument' }
+        return { error: '`head` takes exactly 1 argument' }
       } else if (!Array.isArray(args[0]) || args[0].length === 0) {
-        return { 'error': 'argument to `head` must be a list of at least 1 element' }
+        return { error: 'argument to `head` must be a list of at least 1 element' }
       } else {
         return args[0][0]
       }
     },
     rest: (...args) => {
       if (args.length !== 1) {
-        return { 'error': '`rest` takes exactly 1 argument' }
+        return { error: '`rest` takes exactly 1 argument' }
       } else if (!Array.isArray(args[0]) || args[0].length === 0) {
-        return { 'error': 'argument to `rest` must be a list of at least 1 element' }
+        return { error: 'argument to `rest` must be a list of at least 1 element' }
       } else {
         return args[0].slice(1)
       }
+    },
+    get: (...args) => {
+      if (args.length !== 2 && args.length !== 3) {
+        return { error: '`get` requires 2 or 3 arguments' }
+      }
+      const container = args[0]
+      const index = args[1]
+      const defaultValue = args[2]
+      const value = container[index]
+      if (typeof value === 'undefined') {
+        if (typeof defaultValue === 'undefined') {
+          return { error: 'failed to `get` index ' + index}
+        } else {
+          return defaultValue
+        }
+      } else {
+        return value
+      }
+    },
+    set: (...args) => {
+      if (args.length !== 3) {
+        return { error: '`set` requires 3 arguments' }
+      }
+      const container = args[0]
+      const index = args[1]
+      const value = args[2]
+      container[index] = value
+      return value
     },
     append: (...args) => { return [].concat(...args) },
     concat: (...args) => { return ''.concat(...args) },

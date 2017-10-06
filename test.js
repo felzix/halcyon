@@ -132,6 +132,16 @@ test('lisp-parser :: headrest', t => {
       [2, 3])
 })
 
+test('lisp-parser :: set-get', t => {
+  t.deepEqual(
+    parseAndEval(`
+      (block
+        (def x (list))
+        (set x 0 4)
+        (get x 0))`),
+    4)
+})
+
 test('lisp-parser :: symbolism', t => {
   testParse(t, '(list (def foo 12) foo)', ['list', ['def', 'foo', 12], 'foo'], [12, 12])
   testParse(t, '(block (def foo 12) foo)', ['block', ['def', 'foo', 12], 'foo'], 12)
