@@ -10,6 +10,12 @@ app.use(bodyParser.text()); // for parsing text
 app.use(bodyParser.json()); // for parsing application/json
 app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
 
+app.use(function(request, response, next) {
+  response.header("Access-Control-Allow-Origin", "*");
+  response.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+});
+
 app.get('/:owner/:name/:version', (request, response) => {
   const { owner, name, version } = request.params
   const nodeMap = node.readJsonFile('nodes.json')
@@ -34,5 +40,5 @@ app.put('/:owner/:name/:version', (request, response) => {
 })
 
 app.listen(41814, () => {
-  console.log('node server running')
+  console.log('node server running on port 41814')
 })

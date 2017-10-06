@@ -123,7 +123,6 @@ class CommandLineInput extends React.Component {
   componentDidUpdate() {
     this.inputElement.selectionStart = this.state.cursorStart
     this.inputElement.selectionEnd = this.state.cursorEnd
-    console.log(`pos: ${this.state.cursorStart} : ${this.state.cursorEnd}`)
   }
 
   // Handles non-repeatable control characters or control sequences.
@@ -131,7 +130,6 @@ class CommandLineInput extends React.Component {
     event.stopPropagation()
     const {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey} = event
     const value = this.state.value
-    console.log(`up ${key} ${metaKey}`)
     if (key.length === 1) {  // might just be a printable
       // TODO are these ever brought here?
       if (ctrlKey || shiftKey || altKey || metaKey) {  // this is a control sequence!
@@ -155,7 +153,6 @@ class CommandLineInput extends React.Component {
   handleKeyDown(event) {
     event.stopPropagation()
     const { key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey } = event
-    console.log(`down ${key} ${metaKey}`)
     let { cursorStart, cursorEnd, value } = this.state
     const { selectionLeft, selectionRight } = this.inputElement
 
@@ -324,7 +321,6 @@ class CommandLineInput extends React.Component {
   handleKeyboard(event) {
     event.stopPropagation()
     const { key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey } = event
-    console.log(`press ${key} ${ctrlKey}`)
     let value = this.state.value
     if (key.length > 1) {  // non-printable so let handleKeyUp deal with it
       return
@@ -509,6 +505,7 @@ function interpretCommand(command, lispInterpreter) {
 
 function interpretLisp(command, lispInterpreter) {
   const result = lispInterpreter(command)
+  // TODO result can be a Promise...
   if (typeof result.$$typeof === 'symbol') {  // probably a React element
     return result
   } else {  // wrap in React element

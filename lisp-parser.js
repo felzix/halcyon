@@ -1,7 +1,11 @@
 /* jshint -W061, -W054, -W086 */
 
+import 'babel-polyfill'  // necessary for await/async to work
+import $ from 'jquery'
 import { generate } from 'pegjs'
 import React from 'react'
+
+import node from './node'
 
 
 const grammar = `
@@ -87,7 +91,6 @@ function makeArithmetic(symbol, one, many) {
 export function buildLambdaString(rest) {
   const params = rest[0].map(p => { return description(p) })
   const locals = params.map(p => { return `[Symbol.for('def'), Symbol.for('${p}'), ${p}]` })
-  // const body = rest.slice(1).map(statement => toJavascript(statement))
   const body = toJavascript(rest.slice(1))
   return `
     (function(${params.join(', ')}) {
@@ -182,10 +185,26 @@ export const defaultContext = {
                              args => { return args.reduce((x, y) => { return x / y }) }),
     // awesome stuff
     react: (...args) => {
+      if (args.length < 2) {
+        return { error: '`react` requires at least 2 arguments' }
+      }
       const tag = args[0]
       const props = null  // TODO args[1]
       const children = args.slice(1)  // TODO args.slice(2)
       return React.createElement(tag, props, children)
+    },
+    node: async (...args) => {
+      if (args.length !== 1) {
+        return { error: '`node` requires exactly 1 argument' }
+      }
+      const urn = args[0]
+      const { owner, name, version } = node.decodeNodeURN(urn)
+      const datum = await $.ajax({
+        type: "GET",
+        url: `http://localhost:41814/${owner}/${name}/${version}`
+      })
+      console.log(datum, typeof datum)
+      return datum
     }
   }
 }
@@ -249,7 +268,9 @@ export function evaluate(tree, context) {
   switch (typeof first) {
     case 'function': {
       rest = rest.map(s => { return evaluate(s, context) })
-      return first(...rest)
+      const result = first(...rest)
+      // TODO result can be a Promise...
+      return result
     }
     case 'macro': {
       // TODO this is theoretical right now

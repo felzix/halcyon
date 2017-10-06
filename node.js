@@ -65,23 +65,28 @@ module.exports.decodeNodeURI = (uri, defaultOwner) => {
 
   let owner = '', rest = '', name = '', version = ''
 
-  uri = uri.slice(7)
-  if (uri.includes('+')) {
-    [owner, rest] = uri.split('+')
+  const urn = uri.slice(7)
+  return decodeNodeURN(urn, defaultOwner, defaultVersion)
+}
+
+function decodeNodeURN(urn, defaultOwner, defaultVersion) {
+  let owner = defaultOwner, rest = '', name = '', version = defaultVersion
+
+  if (urn.includes('+')) {
+    [owner, rest] = urn.split('+')
   } else {
-    owner = defaultOwner
-    rest = uri
+    rest = urn
   }
 
-  if (uri.includes(':')) {
+  if (urn.includes(':')) {
     [name, version] = rest.split(':')
   } else {
     name = rest
-    version = defaultVersion
   }
 
   return { owner, name, version }
 }
+module.exports.decodeNodeURN = decodeNodeURN
 
 module.exports.encodeFullNodeURI = (owner, name, version) => {
   return `node://${owner}+${name}:${version}`

@@ -286,6 +286,11 @@ test('lisp-parser :: html', t => {
     '<div>stuff and &lt;br/&gt; stuff</div>')
 })
 
+test('lisp-parser :: node', t => {
+  const result = parseAndEval(`(node "robert+todo:latest")`)
+  t.is(result, 'hi')
+})
+
 test('node :: sha256', t => {
   t.is(sha256('hello'),
   '2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824')
