@@ -2,6 +2,7 @@ import uuid4 from 'uuid'
 
 import test from 'ava';
 import ReactDOMServer from 'react-dom/server';
+import { unlink } from 'fs'
 
 import { parse, evaluate, buildLambdaString, defaultContext, makeInterpreter } from './lisp-parser'
 import parseAndEval from './lisp-parser'
@@ -323,8 +324,7 @@ test('node :: encode-decode', t => {
     { owner, name, version: 'unversioned' })
 })
 
-// TODO the 'fs' module is not available in the browser (*JsonFile and unlink)
-test.skip('node :: write-read', t => {
+test('node :: server-side write-read', t => {
   const nodeFile = `/tmp/halcyon-node-${uuid4()}`
   const dataFile = `/tmp/halcyon-data-${uuid4()}`
   const nodeMap = {}

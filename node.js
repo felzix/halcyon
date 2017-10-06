@@ -1,23 +1,25 @@
 /* jshint -W120 */
 
-import crypto from 'crypto'
-// TODO work around how 'fs' isn't a thing browsers get to use
-// import { readFileSync, writeFileSync } from 'fs'
+const crypto = require('crypto')
+const {readFileSync, writeFileSync } = require('fs')
 
+module.exports = {}
 
-export function sha256(x) {
+function sha256(x) {
   return crypto.createHash('sha256').update(x, 'utf8').digest('hex')
 }
+module.exports.sha256 = sha256
 
-// TODO work around how 'fs' isn't a thing browsers get to use
-// export function readJsonFile(url) {
-//   return JSON.parse(readFileSync(url, 'utf8'))
-// }
-// export function writeJsonFile(url, map) {
-//   return writeFileSync(url, JSON.stringify(map), 'utf8')
-// }
+module.exports.readJsonFile = url => {
+  const raw = readFileSync(url, 'utf8')
+  return JSON.parse(raw)
+}
 
-export function setNode(nodeMap, dataMap, owner, name, version, datum) {
+module.exports.writeJsonFile = (url, map) => {
+  return writeFileSync(url, JSON.stringify(map), 'utf8')
+}
+
+module.exports.setNode = (nodeMap, dataMap, owner, name, version, datum) => {
   const hash = sha256(datum)
   dataMap[hash] = datum
 
@@ -28,7 +30,7 @@ export function setNode(nodeMap, dataMap, owner, name, version, datum) {
   nodeMap[owner][name][version] = hash
 }
 
-export function getNode(nodeMap, dataMap, owner, name, version) {
+module.exports.getNode = (nodeMap, dataMap, owner, name, version) => {
   const hash = getNodeHash(nodeMap, owner, name, version)
   if (typeof hash !== 'undefined') {
     return dataMap[hash]
@@ -58,7 +60,7 @@ function unhash(dataMap, hash) {
  * uri: node://[owner+]name[:version][#...]
         (note that `name` is mandatory)
  */
-export function decodeNodeURI(uri, defaultOwner) {
+module.exports.decodeNodeURI = (uri, defaultOwner) => {
   const defaultVersion = 'unversioned'
 
   let owner = '', rest = '', name = '', version = ''
@@ -81,6 +83,6 @@ export function decodeNodeURI(uri, defaultOwner) {
   return { owner, name, version }
 }
 
-export function encodeFullNodeURI(owner, name, version) {
+module.exports.encodeFullNodeURI = (owner, name, version) => {
   return `node://${owner}+${name}:${version}`
 }
