@@ -1,6 +1,7 @@
 import React from 'react'
 import store from './store'
-import { setConfig } from './reducer'
+import { setConfig, setNodeMap, setDataMap } from './reducer'
+import { readJsonFile } from './node'
 
 
 export function text(string, color) {
@@ -21,8 +22,12 @@ export function uploadConfig() {
     reader.onload = function() {
       console.log(reader.result)
       const config = JSON.parse(reader.result)
-      console.log(config)
       store.dispatch(setConfig(config))
+      // TODO work around how 'fs' isn't something browsers get to use
+      // const nodeMap = readJsonFile(config.nodeFile)
+      // const dataMap = readJsonFile(config.dataFile)
+      // store.dispatch(setNodeMap(nodeMap))
+      // store.dispatch(setNodeMap(dataMap))
     }
     reader.readAsText(file);
   }

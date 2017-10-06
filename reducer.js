@@ -6,6 +6,8 @@ export const SET_HISTORICAL_RESULT = 'SET_HISTORICAL_RESULT'
 export const RECORD_PAGE_HEIGHT = 'RECORD_PAGE_HEIGHT'
 export const SET_CONFIG = 'SET_CONFIG'
 export const SET_CLI_ELEMENT = 'SET_CLI_ELEMENT'
+export const SET_NODE_MAP = 'SET_NODE_MAP'
+export const SET_DATA_MAP = 'SET_DATA_MAP'
 
 
 export const pushHistory = (command, result) => {
@@ -45,6 +47,20 @@ export const setCliElement = (element) => {
   }
 }
 
+export const setNodeMap = (map) => {
+  return {
+    type: SET_NODE_MAP,
+    map
+  }
+}
+
+export const setDataMap = (map) => {
+  return {
+    type: SET_DATA_MAP,
+    map
+  }
+}
+
 
 // remove jshint when ticket resolves: https://github.com/jshint/jshint/issues/2991
 // jshint ignore:start
@@ -74,11 +90,21 @@ export default (state, action) => {
         ...state,
         config: action.config
       }
-      case SET_CLI_ELEMENT:
-        return {
-          ...state,
-          cliElement: action.element
-        }
+    case SET_CLI_ELEMENT:
+      return {
+        ...state,
+        cliElement: action.element
+      }
+    case SET_NODE_MAP:
+      return {
+        ...state,
+        nodeMap: action.map
+      }
+    case SET_DATA_MAP:
+      return {
+        ...state,
+        dataMap: action.map
+      }
     default: return state
   }
 }

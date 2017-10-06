@@ -1,20 +1,21 @@
 /* jshint -W120 */
 
 import crypto from 'crypto'
-import { readFileSync, writeFileSync } from 'fs'
+// TODO work around how 'fs' isn't a thing browsers get to use
+// import { readFileSync, writeFileSync } from 'fs'
 
 
 export function sha256(x) {
   return crypto.createHash('sha256').update(x, 'utf8').digest('hex')
 }
 
-export function readJsonFile(url) {
-  return JSON.parse(readFileSync(url, 'utf8'))
-}
-
-export function writeJsonFile(url, map) {
-  return writeFileSync(url, JSON.stringify(map), 'utf8')
-}
+// TODO work around how 'fs' isn't a thing browsers get to use
+// export function readJsonFile(url) {
+//   return JSON.parse(readFileSync(url, 'utf8'))
+// }
+// export function writeJsonFile(url, map) {
+//   return writeFileSync(url, JSON.stringify(map), 'utf8')
+// }
 
 export function setNode(nodeMap, dataMap, owner, name, version, datum) {
   const hash = sha256(datum)

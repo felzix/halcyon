@@ -10,7 +10,9 @@ const defaultState = {
   cliElement: null,
   history: [],
   pageHeight: 600,  // necessary for redrawing on window resize
-  config: {}
+  config: {},
+  nodeMap: {},
+  dataMap: {}
 }
 
 const store = createStore(reducer, defaultState)
