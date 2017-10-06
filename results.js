@@ -4,14 +4,23 @@ import { setConfig, setNodeMap, setDataMap } from './reducer'
 import { readJsonFile } from './node'
 
 
-export function text(string, color) {
-  if (typeof string === 'object') {
-    string = JSON.stringify(string)
-  }
+export function text(thing, color) {
   let style = {}
   if (typeof color !== 'undefined') style.color = color
+
+  if (typeof thing === 'object') {
+    try {
+      thing = JSON.stringify(thing)
+    } catch (err) {
+      thing = 'ERROR: object cannot be serialized'
+      style.color = 'red'
+    }
+  } else if (typeof thing === 'function') {
+    thing = `[Function: ${thing.name}]`
+  }
+  
   return (
-    <pre style={style}>{string}</pre>
+    <pre style={style}>{thing}</pre>
   )
 }
 

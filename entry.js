@@ -3,6 +3,7 @@ import React from 'react'
 import ReactDOM from 'react-dom'
 import IndexPage from './IndexPage'
 import $ from 'jquery'
+import store from './store'
 
 
 window.onload = () => {
@@ -16,3 +17,5 @@ window.get = url => {
     url
   })
 }
+
+window.store = store
