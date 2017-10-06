@@ -1,5 +1,7 @@
-import test from 'ava';
 import uuid4 from 'uuid'
+
+import test from 'ava';
+import ReactDOMServer from 'react-dom/server';
 
 import { parse, evaluate, buildLambdaString, defaultContext, makeInterpreter } from './lisp-parser'
 import parseAndEval from './lisp-parser'
@@ -133,7 +135,7 @@ test('lisp-parser :: headrest', t => {
 })
 
 test('lisp-parser :: set-get', t => {
-  t.deepEqual(
+  t.is(
     parseAndEval(`
       (block
         (def x (list))
@@ -244,6 +246,16 @@ test('lisp-parser :: interpreter', t => {
   t.deepEqual(interpreter('(list 6 7)'), [6, 7])
   t.is(interpreter('(def a 19)'), 19)
   t.is(interpreter('a'), 19)
+})
+
+test('lisp-parser :: html', t => {
+  let div = parseAndEval(`(react "div" "stuff and stuff")`)
+  t.is(ReactDOMServer.renderToStaticMarkup(div),
+    '<div>stuff and stuff</div>')
+
+  div = parseAndEval(`(react "div" "stuff and <br/> stuff")`)
+  t.is(ReactDOMServer.renderToStaticMarkup(div),
+    '<div>stuff and &lt;br/&gt; stuff</div>')
 })
 
 test('node :: sha256', t => {

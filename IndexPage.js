@@ -508,7 +508,13 @@ function interpretCommand(command, lispInterpreter) {
 }
 
 function interpretLisp(command, lispInterpreter) {
-  return text(lispInterpreter(command))
+  const result = lispInterpreter(command)
+  if (typeof result.$$typeof === 'symbol') {  // probably a React element
+    return result
+  } else {  // wrap in React element
+    return text(result)
+  }
+
 }
 
 function interpretJavascript(command) {

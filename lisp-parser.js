@@ -1,6 +1,7 @@
 /* jshint -W061, -W054, -W086 */
 
 import { generate } from 'pegjs'
+import React from 'react'
 
 
 const grammar = `
@@ -96,6 +97,7 @@ export function buildLambdaString(rest) {
 export const defaultContext = {
   parent: undefined,  // written here for clarity
   definitions: {
+    // important language stuff
     list: (...args) => { return args },
     head: (...args) => {
       if (args.length !== 1) {
@@ -150,7 +152,14 @@ export const defaultContext = {
                              args => { return args.reduce((x, y) => { return x - y }) }),
     '*': makeArithmetic('*', args => { return args.reduce((x, y) => { return x * y }) }),
     '/': makeArithmetic('/', args => { return 1 / args[0] },
-                             args => { return args.reduce((x, y) => { return x / y }) })
+                             args => { return args.reduce((x, y) => { return x / y }) }),
+    // awesome stuff
+    react: (...args) => {
+      const tag = args[0]
+      const props = null  // TODO args[1]
+      const children = args.slice(1)  // TODO args.slice(2)
+      return React.createElement(tag, props, children)
+    }
   }
 }
 
