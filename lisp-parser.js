@@ -203,7 +203,6 @@ export const defaultContext = {
         type: "GET",
         url: `http://localhost:41814/${owner}/${name}/${version}`
       })
-      console.log(datum, typeof datum)
       return datum
     }
   }

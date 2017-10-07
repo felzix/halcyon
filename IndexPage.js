@@ -1,3 +1,4 @@
+import 'babel-polyfill'  // necessary for await/async to work
 import React from 'react'
 import ReactTestUtils from 'react-dom/test-utils'
 import { connect, Provider } from 'react-redux'
@@ -347,11 +348,11 @@ class CommandLineInput extends React.Component {
     })
   }
 
-  handleSubmit(event) {
+  async handleSubmit(event) {
     const command = this.state.value
     if (command !== '') {
-      this.recordCommand(command)
       this.setState({ value: '' })
+      await this.recordCommand(command)
     }
     event.preventDefault();
   }
@@ -373,7 +374,7 @@ class CommandLineInput extends React.Component {
     return { start, end }
   }
 
-  recordCommand(command) {
+  async recordCommand(command) {
     const historicalIndex = this.props.history.length
     interpretCommand(command, this.props.lispInterpreter).then(result => {
       this.props.setHistoricalResult(historicalIndex, result)
@@ -481,7 +482,7 @@ CommandLineInput = connect(
 
 const globalEval = eval  // this magically makes eval's scope global
 function interpretCommand(command, lispInterpreter) {
-  return new Promise(resolve => {
+  return new Promise(async resolve => {
     switch(command) {
       case "help":
         resolve(text(HELPTEXT))
@@ -494,7 +495,7 @@ function interpretCommand(command, lispInterpreter) {
           const language = store.getState().shellLanguage
           switch(language) {
             case 'javascript': resolve(interpretJavascript(command)); break
-            case 'lisp': resolve(interpretLisp(command, lispInterpreter)); break
+            case 'lisp': resolve(await interpretLisp(command, lispInterpreter)); break
           }
         } catch(err) {
           resolve(text(err.stack, 'red'))
@@ -503,9 +504,8 @@ function interpretCommand(command, lispInterpreter) {
   })
 }
 
-function interpretLisp(command, lispInterpreter) {
-  const result = lispInterpreter(command)
-  // TODO result can be a Promise...
+async function interpretLisp(command, lispInterpreter) {
+  const result = await lispInterpreter(command)
   if (typeof result.$$typeof === 'symbol') {  // probably a React element
     return result
   } else {  // wrap in React element
