@@ -58,11 +58,7 @@ async function evoke(symbol, context) {
   const definitions = context.definitions
   const meaning = definitions[description(symbol)]
   if (typeof meaning !== 'undefined') {
-    if (meaning.constructor === Promise) {
-      return await meaning
-    } else {
-      return meaning
-    }
+    return meaning
   } else if (typeof parent !== 'undefined') {
     return await evoke(symbol, parent)
   } else if (typeof symbol === 'string') {
@@ -271,7 +267,9 @@ export async function evaluate(tree, context) {
 
   switch (typeof first) {
     case 'function': {
-      rest = await Promise.all(rest.map(async s => { return evaluate(s, context) }))
+      for (let i = 0; i < rest.length; i++) {
+        rest[i] = await evaluate(rest[i], context)
+      }
       let result = first(...rest)
       if (result.constructor === Promise) {
         result = await result

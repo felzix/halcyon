@@ -41,77 +41,77 @@ const foo = Symbol.for('foo')
 const math_sqrt = Symbol.for('Math.sqrt')
 
 
-test('lisp-parser :: empty string', t => {
+test('lisp-parser :: empty string', async t => {
   const tree = parse('')
   t.deepEqual(tree, undefined)
 })
 
-test('lisp-parser :: empty list', t => {
-  testParse(t, '()', [], [])
+test('lisp-parser :: empty list', async t => {
+  await testParse(t, '()', [], [])
 })
 
-test('lisp-parser :: symbol', t => {
-  testParse(t, 'Math.sqrt', math_sqrt, Math.sqrt)
+test('lisp-parser :: symbol', async t => {
+  await testParse(t, 'Math.sqrt', math_sqrt, Math.sqrt)
 })
 
-test('lisp-parser :: atom', t => {
-  testParse(t, '17', 17, 17)
-  testParse(t, '17.19', 17.19, 17.19)
-  testParse(t, 'true', true, true)
-  testParse(t, 'false', false, false)
-  testParse(t, '"hello"', 'hello', 'hello')
-  testParse(t, `"hi \\" girl"`, 'hi " girl', 'hi " girl')
-  testParse(t, `"a \\ b"`, 'a \\ b', 'a \\ b')
+test('lisp-parser :: atom', async t => {
+  await testParse(t, '17', 17, 17)
+  await testParse(t, '17.19', 17.19, 17.19)
+  await testParse(t, 'true', true, true)
+  await testParse(t, 'false', false, false)
+  await testParse(t, '"hello"', 'hello', 'hello')
+  await testParse(t, `"hi \\" girl"`, 'hi " girl', 'hi " girl')
+  await testParse(t, `"a \\ b"`, 'a \\ b', 'a \\ b')
 })
 
-test('lisp-parser :: arithmetic', t => {
-  testParse(t, '(+)', [add], { error: '`+` must have at least 1 argument' })
-  testParse(t, '(+ 5)', [add, 5], 5)
-  testParse(t, '(+ 3 4 5 6)', [add, 3, 4, 5, 6], 3+4+5+6)
+test('lisp-parser :: arithmetic', async t => {
+  await testParse(t, '(+)', [add], { error: '`+` must have at least 1 argument' })
+  await testParse(t, '(+ 5)', [add, 5], 5)
+  await testParse(t, '(+ 3 4 5 6)', [add, 3, 4, 5, 6], 3+4+5+6)
 
-  testParse(t, '(-)', [subtract], { error: '`-` must have at least 1 argument' })
-  testParse(t, '(- 5)', [subtract, 5], -5)
-  testParse(t, '(- 3 4 5 6)', [subtract, 3, 4, 5, 6], 3-4-5-6)
+  await testParse(t, '(-)', [subtract], { error: '`-` must have at least 1 argument' })
+  await testParse(t, '(- 5)', [subtract, 5], -5)
+  await testParse(t, '(- 3 4 5 6)', [subtract, 3, 4, 5, 6], 3-4-5-6)
 
-  testParse(t, '(*)', [multiply], { error: '`*` must have at least 1 argument' })
-  testParse(t, '(* 5)', [multiply, 5], 5)
-  testParse(t, '(* 3 4 5 6)', [multiply, 3, 4, 5, 6], 3*4*5*6)
+  await testParse(t, '(*)', [multiply], { error: '`*` must have at least 1 argument' })
+  await testParse(t, '(* 5)', [multiply, 5], 5)
+  await testParse(t, '(* 3 4 5 6)', [multiply, 3, 4, 5, 6], 3*4*5*6)
 
-  testParse(t, '(/)', [divide], { error: '`/` must have at least 1 argument' })
-  testParse(t, '(/ 5)', [divide, 5], 1/5)
-  testParse(t, '(/ 3 4 5 6)', [divide, 3, 4, 5, 6], 3/4/5/6)
+  await testParse(t, '(/)', [divide], { error: '`/` must have at least 1 argument' })
+  await testParse(t, '(/ 5)', [divide, 5], 1/5)
+  await testParse(t, '(/ 3 4 5 6)', [divide, 3, 4, 5, 6], 3/4/5/6)
 })
 
-test('lisp-parser :: javascript native', t => {
-  testParse(t, '(Math.sqrt 4)', [math_sqrt, 4], Math.sqrt(4))
+test('lisp-parser :: javascript native', async t => {
+  await testParse(t, '(Math.sqrt 4)', [math_sqrt, 4], Math.sqrt(4))
 })
 
-test('lisp-parser :: nested', t => {
-  testParse(t, '(+ 5 (+ 2 7))', [add, 5, [add, 2, 7]], 5+(2+7))
-  testParse(t, '(+ (+ 2 7) (+ 7 8))', [add, [add, 2, 7], [add, 7, 8]], (2+7)+(7+8))
+test('lisp-parser :: nested', async t => {
+  await testParse(t, '(+ 5 (+ 2 7))', [add, 5, [add, 2, 7]], 5+(2+7))
+  await testParse(t, '(+ (+ 2 7) (+ 7 8))', [add, [add, 2, 7], [add, 7, 8]], (2+7)+(7+8))
 })
 
-test('lisp-parser :: quote', t => {
-  testParse(t, '(quote)', [quote], {error: '`quote` must have exactly 1 argument'})
-  testParse(t, '(quote ())', [quote, []], [])
-  testParse(t, '(quote 1)', [quote, 1], 1)
-  testParse(t, '(quote (1))', [quote, [1]], [1])
-  testParse(t, '(quote (1 2 3))', [quote, [1, 2, 3]], [1, 2, 3])
-  testParse(t, "'(4 5 6)", [quote, [4, 5, 6]], [4, 5, 6])
-  testParse(t, "(list '(7 8) '(9 10))",
+test('lisp-parser :: quote', async t => {
+  await testParse(t, '(quote)', [quote], {error: '`quote` must have exactly 1 argument'})
+  await testParse(t, '(quote ())', [quote, []], [])
+  await testParse(t, '(quote 1)', [quote, 1], 1)
+  await testParse(t, '(quote (1))', [quote, [1]], [1])
+  await testParse(t, '(quote (1 2 3))', [quote, [1, 2, 3]], [1, 2, 3])
+  await testParse(t, "'(4 5 6)", [quote, [4, 5, 6]], [4, 5, 6])
+  await testParse(t, "(list '(7 8) '(9 10))",
     [list, [quote, [7, 8]], [quote, [9, 10]]],
     [[7, 8], [9, 10]])
-  testParse(t, '(quote (+ 1 (+ 2 3)))',
+  await testParse(t, '(quote (+ 1 (+ 2 3)))',
     [quote, [add, 1, [add, 2, 3]]],
     [add, 1, [add, 2, 3]]
   )
 })
 
-test('lisp-parser :: list', t => {
-  testParse(t, '(list)', [list], [])
-  testParse(t, '(list ())', [list, []], [[]])
-  testParse(t, '(list 1 2 3)', [list, 1, 2, 3], [1, 2, 3])
-  testParse(t, '(list (list 1 2) (list 3) (list))',
+test('lisp-parser :: list', async t => {
+  await testParse(t, '(list)', [list], [])
+  await testParse(t, '(list ())', [list, []], [[]])
+  await testParse(t, '(list 1 2 3)', [list, 1, 2, 3], [1, 2, 3])
+  await testParse(t, '(list (list 1 2) (list 3) (list))',
     [list, [list, 1, 2], [list, 3], [list]],
     [[1, 2], [3], []]
   )
@@ -162,8 +162,8 @@ test('lisp-parser :: set-get', async t => {
     4)
 })
 
-test('lisp-parser :: symbolism', t => {
-  testParse(t, '(list (def foo 12) foo)', [list, [def, foo, 12], foo], [12, 12])
+test('lisp-parser :: symbolism', async t => {
+  await testParse(t, '(list (def foo 12) foo)', [list, [def, foo, 12], foo], [12, 12])
   testParse(t, '(block (def foo 12) foo)', [block, [def, foo, 12], foo], 12)
   testParse(t, `
     (block
@@ -179,7 +179,7 @@ test('lisp-parser :: symbolism', t => {
     12)
 })
 
-test('lisp-parser :: util :: buildLambdaString', t => {
+test('lisp-parser :: util :: buildLambdaString', async t => {
   const params = [x, y]
   const body = [multiply, x, y]
   const rest = [params, body]
@@ -199,8 +199,8 @@ test('lisp-parser :: util :: buildLambdaString', t => {
     })`)
 })
 
-test('lisp-parser :: lambda', t => {
-  testParse(t, `
+test('lisp-parser :: lambda', async t => {
+  await testParse(t, `
     (block
       (def double (lambda (x) (* x 2)))
       (double 8))`,
@@ -210,8 +210,8 @@ test('lisp-parser :: lambda', t => {
     16)
 })
 
-test('lisp-parser :: lambda multiparam', t => {
-  testParse(t, `
+test('lisp-parser :: lambda multiparam', async t => {
+  await testParse(t, `
     (block
       (def m (lambda (x y) (* x y)))
       (m 8 3))`,
@@ -221,8 +221,8 @@ test('lisp-parser :: lambda multiparam', t => {
     24)
 })
 
-test('lisp-parser :: lambda w/ string', t => {
-  testParse(t, `
+test('lisp-parser :: lambda w/ string', async t => {
+  await testParse(t, `
     (block
       (def x (lambda (x) (concat x ".")))
       (x "A sentence"))`,
@@ -232,8 +232,8 @@ test('lisp-parser :: lambda w/ string', t => {
     'A sentence.')
 })
 
-test('lisp-parser :: lambda wrong args', t => {
-  testParse(t, `
+test('lisp-parser :: lambda wrong args', async t => {
+  await testParse(t, `
     (block
       (def m (lambda (x y) (* x y)))
       (m 8))`,
@@ -241,14 +241,14 @@ test('lisp-parser :: lambda wrong args', t => {
       [def, m, [lambda, [x, y], [multiply, x, y]]],
       [m, 8]],
     { error: 'has 1 arg(s) should have 2 arg(s)' })
-    testParse(t, `
-      (block
-        (def m (lambda (x y) (* x y)))
-        (m 8 9 10))`,
-      [block,
-        [def, m, [lambda, [x, y], [multiply, x, y]]],
-        [m, 8, 9, 10]],
-      { error: 'has 3 arg(s) should have 2 arg(s)' })
+  await testParse(t, `
+    (block
+      (def m (lambda (x y) (* x y)))
+      (m 8 9 10))`,
+    [block,
+      [def, m, [lambda, [x, y], [multiply, x, y]]],
+      [m, 8, 9, 10]],
+    { error: 'has 3 arg(s) should have 2 arg(s)' })
 })
 
 test('lisp-parser :: closure', async t => {
@@ -293,12 +293,12 @@ test.skip('lisp-parser :: node', async t => {
   t.is(result, 'hi')
 })
 
-test('node :: sha256', t => {
+test('node :: sha256', async t => {
   t.is(sha256('hello'),
   '2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824')
 })
 
-test('node :: set-get', t => {
+test('node :: set-get', async t => {
   const nodeMap = {}
   const dataMap = {}
   setNode(nodeMap, dataMap, 'robert', 'todo', 'latest', 'rock on')
@@ -318,7 +318,7 @@ test('node :: set-get', t => {
   t.is(getNode(nodeMap, dataMap, 'robert', 'todo', 'latest'), 'oranges')
 })
 
-test('node :: encode-decode', t => {
+test('node :: encode-decode', async t => {
   const owner = 'robert', name = 'todo', version = 'latest'
   t.is(encodeFullNodeURI(owner, name, version), 'node://robert+todo:latest')
   t.deepEqual(decodeNodeURI('node://robert+todo:latest'),
@@ -331,7 +331,7 @@ test('node :: encode-decode', t => {
     { owner, name, version: 'unversioned' })
 })
 
-test('node :: server-side write-read', t => {
+test('node :: server-side write-read', async t => {
   const nodeFile = `/tmp/halcyon-node-${uuid4()}`
   const dataFile = `/tmp/halcyon-data-${uuid4()}`
   const nodeMap = {}
