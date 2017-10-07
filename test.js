@@ -1,8 +1,9 @@
+import 'babel-polyfill'  // necessary for await/async to work
 import uuid4 from 'uuid'
+import { unlink } from 'fs'
 
 import test from 'ava';
 import ReactDOMServer from 'react-dom/server';
-import { unlink } from 'fs'
 
 import { parse, evaluate, buildLambdaString, defaultContext, makeInterpreter } from './lisp-parser'
 import parseAndEval from './lisp-parser'
@@ -10,10 +11,10 @@ import { sha256, setNode, getNode, decodeNodeURI, encodeFullNodeURI,
          readJsonFile, writeJsonFile } from './node'
 
 
-function testParse(t, string, expectedTree, expectedResult) {
+async function testParse(t, string, expectedTree, expectedResult) {
   const tree = parse(string)
   t.deepEqual(tree, expectedTree)
-  t.deepEqual(evaluate(tree, defaultContext), expectedResult)
+  t.deepEqual(await evaluate(tree, defaultContext), expectedResult)
 }
 
 // built-ins
@@ -116,44 +117,44 @@ test('lisp-parser :: list', t => {
   )
 })
 
-test('lisp-parser :: append', t => {
+test('lisp-parser :: append', async t => {
   t.deepEqual(
-    parseAndEval(`(append '(12 14) '("friends"))`),
+    await parseAndEval(`(append '(12 14) '("friends"))`),
     [12, 14, `friends`]
   )
 })
 
-test('lisp-parser :: headrest', t => {
+test('lisp-parser :: headrest', async t => {
   t.deepEqual(
-    parseAndEval("(head)"),
+    await parseAndEval("(head)"),
     { error: '`head` takes exactly 1 argument' })
   t.deepEqual(
-    parseAndEval("(head '())"),
+    await parseAndEval("(head '())"),
     { error: 'argument to `head` must be a list of at least 1 element' })
   t.deepEqual(
-    parseAndEval("(head '(1))"),
+    await parseAndEval("(head '(1))"),
     1)
   t.deepEqual(
-    parseAndEval("(head '(1 2 3))"),
+    await parseAndEval("(head '(1 2 3))"),
     1)
 
   t.deepEqual(
-    parseAndEval("(rest)"),
+    await parseAndEval("(rest)"),
     { error: '`rest` takes exactly 1 argument' })
   t.deepEqual(
-    parseAndEval("(rest '())"),
+    await parseAndEval("(rest '())"),
     { error: 'argument to `rest` must be a list of at least 1 element' })
   t.deepEqual(
-    parseAndEval("(rest '(1))"),
+    await parseAndEval("(rest '(1))"),
     [])
     t.deepEqual(
-      parseAndEval("(rest '(1 2 3))"),
+      await parseAndEval("(rest '(1 2 3))"),
       [2, 3])
 })
 
-test('lisp-parser :: set-get', t => {
+test('lisp-parser :: set-get', async t => {
   t.is(
-    parseAndEval(`
+    await parseAndEval(`
       (block
         (def x (list))
         (set x 0 4)
@@ -186,7 +187,7 @@ test('lisp-parser :: util :: buildLambdaString', t => {
 
   const string = buildLambdaString(rest, context)
   t.is(string, `
-    (function(x, y) {
+    (async function(x, y) {
       if (arguments.length !== 2) {
         return { error: 'has ' + arguments.length + ' arg(s) should have ' + 2 + ' arg(s)'}
       }
@@ -194,7 +195,7 @@ test('lisp-parser :: util :: buildLambdaString', t => {
         Symbol.for('block'),
           [Symbol.for('def'), Symbol.for('x'), x],[Symbol.for('def'), Symbol.for('y'), y]]
       body = body.concat([[Symbol.for('*'), Symbol.for('x'), Symbol.for('y')]])
-      return evaluate(body, context)
+      return await evaluate(body, context)
     })`)
 })
 
@@ -250,8 +251,8 @@ test('lisp-parser :: lambda wrong args', t => {
       { error: 'has 3 arg(s) should have 2 arg(s)' })
 })
 
-test('lisp-parser :: closure', t => {
-  const result = parseAndEval(`
+test('lisp-parser :: closure', async t => {
+  const result = await parseAndEval(`
     (block
       (def outer (lambda (x)
         (lambda (y)
@@ -261,33 +262,34 @@ test('lisp-parser :: closure', t => {
   t.is(result, 9+3)
 })
 
-test('lisp-parser :: lambda as first argument', t => {
-  const result = parseAndEval(`
+test('lisp-parser :: lambda as first argument', async t => {
+  const result = await parseAndEval(`
     ((lambda (x) (* x 10)) 8)`)
   t.is(result, 10*8)
 })
 
-test('lisp-parser :: interpreter', t => {
+test('lisp-parser :: interpreter', async t => {
   const interpreter = makeInterpreter()
-  t.is(interpreter('1'), 1)
-  t.is(interpreter('(quote 7)'), 7)
-  t.deepEqual(interpreter('(list 6 7)'), [6, 7])
-  t.is(interpreter('(def a 19)'), 19)
-  t.is(interpreter('a'), 19)
+  t.is(await interpreter('1'), 1)
+  t.is(await interpreter('(quote 7)'), 7)
+  t.deepEqual(await interpreter('(list 6 7)'), [6, 7])
+  t.is(await interpreter('(def a 19)'), 19)
+  t.is(await interpreter('a'), 19)
 })
 
-test('lisp-parser :: html', t => {
-  let div = parseAndEval(`(react "div" "stuff and stuff")`)
+test('lisp-parser :: html', async t => {
+  let div = await parseAndEval(`(react "div" "stuff and stuff")`)
   t.is(ReactDOMServer.renderToStaticMarkup(div),
     '<div>stuff and stuff</div>')
 
-  div = parseAndEval(`(react "div" "stuff and <br/> stuff")`)
+  div = await parseAndEval(`(react "div" "stuff and <br/> stuff")`)
   t.is(ReactDOMServer.renderToStaticMarkup(div),
     '<div>stuff and &lt;br/&gt; stuff</div>')
 })
 
-test('lisp-parser :: node', t => {
-  const result = parseAndEval(`(node "robert+todo:latest")`)
+// TODO cannot do ajax in node, where the test runs
+test.skip('lisp-parser :: node', async t => {
+  const result = await parseAndEval(`(node "robert+todo:latest")`)
   t.is(result, 'hi')
 })
 

@@ -511,7 +511,6 @@ function interpretLisp(command, lispInterpreter) {
   } else {  // wrap in React element
     return text(result)
   }
-
 }
 
 function interpretJavascript(command) {

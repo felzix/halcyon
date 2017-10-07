@@ -53,14 +53,18 @@ export function parse(string) {
   return parser.parse(string)
 }
 
-function evoke(symbol, context) {
+async function evoke(symbol, context) {
   const parent = context.parent
   const definitions = context.definitions
   const meaning = definitions[description(symbol)]
   if (typeof meaning !== 'undefined') {
-    return meaning
+    if (meaning.constructor === Promise) {
+      return await meaning
+    } else {
+      return meaning
+    }
   } else if (typeof parent !== 'undefined') {
-    return evoke(symbol, parent)
+    return await evoke(symbol, parent)
   } else if (typeof symbol === 'string') {
     return symbol
   } else if (typeof symbol === 'number') {
@@ -93,7 +97,7 @@ export function buildLambdaString(rest) {
   const locals = params.map(p => { return `[Symbol.for('def'), Symbol.for('${p}'), ${p}]` })
   const body = toJavascript(rest.slice(1))
   return `
-    (function(${params.join(', ')}) {
+    (async function(${params.join(', ')}) {
       if (arguments.length !== ${params.length}) {
         return { error: 'has ' + arguments.length + ' arg(s) should have ' + ${params.length} + ' arg(s)'}
       }
@@ -101,7 +105,7 @@ export function buildLambdaString(rest) {
         Symbol.for('block'),
           ${locals}]
       body = body.concat(${body})
-      return evaluate(body, context)
+      return await evaluate(body, context)
     })`
 }
 
@@ -209,9 +213,9 @@ export const defaultContext = {
   }
 }
 
-export function evaluate(tree, context) {
+export async function evaluate(tree, context) {
   if (typeof tree !== 'object') {
-    return evoke(tree, context)
+    return await evoke(tree, context)
   } else if (tree.length === 0){
     return []
   }
@@ -232,7 +236,7 @@ export function evaluate(tree, context) {
           return { error: '`def` must have exactly 2 arguments' }
         } else {
           const symbol = rest[0]
-          const value = evaluate(rest[1], context)
+          const value = await evaluate(rest[1], context)
           context.definitions[description(symbol)] = value
           return value
         }
@@ -242,7 +246,7 @@ export function evaluate(tree, context) {
         const blockContext = { parent: context, definitions: {} }
         let finalValue
         for (let i = 0; i < rest.length; i++) {
-          finalValue = evaluate(rest[i], blockContext)
+          finalValue = await evaluate(rest[i], blockContext)
         }
         return finalValue
       }
@@ -257,19 +261,21 @@ export function evaluate(tree, context) {
         }
       }
       default: {
-        first = evoke(first, context)
+        first = await evoke(first, context)
         // TODO throw error if first isn't something?
       }
     }
   } else if (Array.isArray(first)) {
-    first = evaluate(first, context)  // first arg is a function call
+    first = await evaluate(first, context)  // first arg is a function call
   }
 
   switch (typeof first) {
     case 'function': {
-      rest = rest.map(s => { return evaluate(s, context) })
-      const result = first(...rest)
-      // TODO result can be a Promise...
+      rest = await Promise.all(rest.map(async s => { return evaluate(s, context) }))
+      let result = first(...rest)
+      if (result.constructor === Promise) {
+        result = await result
+      }
       return result
     }
     case 'macro': {
@@ -284,14 +290,14 @@ export function evaluate(tree, context) {
 
 export function makeInterpreter() {
   const globalContext = Object.assign({}, defaultContext)
-  return input => {
-    return evaluate(parse(input), globalContext)
+  return async input => {
+    return await evaluate(parse(input), globalContext)
   }
 }
 
-export default function (string) {
+export default async function (string) {
   const tree = parse(string)
   if (typeof tree !== 'undefined') {
-    return evaluate(tree, Object.assign({}, defaultContext))
+    return await evaluate(tree, Object.assign({}, defaultContext))
   }
 }
