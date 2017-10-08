@@ -277,6 +277,17 @@ test('lisp-parser :: interpreter', async t => {
   t.is(await interpreter('a'), 19)
 })
 
+test('lisp-parser :: eval', async t => {
+  const interpreter = makeInterpreter()
+  const toImport = `
+  (def x 7)
+  (def foo (lambda (y) (+ x y)))
+  foo`
+  t.is(await interpreter(`
+    ((eval "${toImport}") 17)`),
+    24)
+})
+
 test('lisp-parser :: html', async t => {
   let div = await parseAndEval(`(react "div" "stuff and stuff")`)
   t.is(ReactDOMServer.renderToStaticMarkup(div),

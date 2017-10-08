@@ -253,9 +253,12 @@ export async function evaluate(tree, context) {
           return eval(buildLambdaString(rest))
         }
       }
-      case 'import': {
-        if (rest.length != 1) {
-          return { error: '`import` must have exactly 1 argument' }
+      case 'eval': {
+        if (rest.length !== 1) {
+          return { error: '`eval` must have exactly 1 argument' }
+        } else {
+          const body = `(block ${rest[0]})`
+          return evaluate(parser.parse(body), context)
         }
       }
       default: {
