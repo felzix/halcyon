@@ -191,7 +191,7 @@ test('lisp-parser :: util :: buildLambdaString', async t => {
       if (arguments.length !== 2) {
         return { error: 'has ' + arguments.length + ' arg(s) should have ' + 2 + ' arg(s)'}
       }
-      body = [
+      let body = [
         Symbol.for('block'),
           [Symbol.for('def'), Symbol.for('x'), x],[Symbol.for('def'), Symbol.for('y'), y]]
       body = body.concat([[Symbol.for('*'), Symbol.for('x'), Symbol.for('y')]])

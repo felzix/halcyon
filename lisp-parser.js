@@ -97,7 +97,7 @@ export function buildLambdaString(rest) {
       if (arguments.length !== ${params.length}) {
         return { error: 'has ' + arguments.length + ' arg(s) should have ' + ${params.length} + ' arg(s)'}
       }
-      body = [
+      let body = [
         Symbol.for('block'),
           ${locals}]
       body = body.concat(${body})
@@ -249,10 +249,13 @@ export async function evaluate(tree, context) {
         if (rest.length < 2) {
           return { error: '`lambda` must have an arguments list and at least one statement' }
         } else {
-          const params = rest[0]
-          let body = rest[1]
           // context comes from the local scope right here
           return eval(buildLambdaString(rest))
+        }
+      }
+      case 'import': {
+        if (rest.length != 1) {
+          return { error: '`import` must have exactly 1 argument' }
         }
       }
       default: {
