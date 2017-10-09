@@ -204,6 +204,22 @@ export const defaultContext = {
         url: `http://localhost:41814/${owner}/${name}/${version}`
       })
       return datum
+    },
+    save: async (...args) => {
+      if (args.length !== 2) {
+        return { error: '`save` requires exactly 2 arguments' }
+      }
+      const urn = args[0]
+      const data = args[1]
+      const { owner, name, version } = node.decodeNodeURN(urn)
+      const datum = await $.ajax({
+        type: "PUT",
+        url: `http://localhost:41814/${owner}/${name}/${version}`,
+        dataType: "text/plain",
+        contentType: "text/plain",
+        data
+      })
+      return datum
     }
   }
 }
@@ -257,8 +273,9 @@ export async function evaluate(tree, context) {
         if (rest.length !== 1) {
           return { error: '`eval` must have exactly 1 argument' }
         } else {
-          const body = `(block ${rest[0]})`
-          return evaluate(parser.parse(body), context)
+          const arg = await evaluate(rest[0], context)
+          const body = `(block ${arg})`
+          return await evaluate(parser.parse(body), context)
         }
       }
       default: {
