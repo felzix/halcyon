@@ -10,20 +10,32 @@ import node from './node'
 
 const grammar = `
 sexpr
-  = _ a:atom _ { return a }
-  / _ "'" arg:sexpr _ { return [Symbol.for('quote')].concat([arg]) }
-  / _ "(" _ args:sexpr* _ ")"_  { return args === null ? [] : args }
+  = _ d:dotty _ { return d }
+  / _ a:atom _ { return a }
+  / _ s:shorthandQuote _ { return s }
+  / _ l:list _  { return l }
 
 atom
   = float
   / integer
   / boolean
   / string
-  / dotty
   / symbol
 
+list
+  = "(" _ args:sexpr* _ ")" { return args === null ? [] : args }
+
 dotty
-  = f:symbol "." r:sexpr { return [Symbol.for("."), f].concat([r]) }
+  = f:symbol r:innerDotty+ { return [Symbol.for("."), f].concat(r) }
+
+innerDotty
+  = "." a:symbol { return a }
+  / "." a:atom { return a }
+  / "." a:shorthandQuote { return a }
+  / "." a:list { return a }
+
+shorthandQuote
+  = "'" arg:sexpr { return [Symbol.for('quote')].concat([arg]) }
 
 symbol
   = symbolic+ (symbolic[0-9])* { return Symbol.for(text()) }

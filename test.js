@@ -13,6 +13,7 @@ import { sha256, setNode, getNode, decodeNodeURI, encodeFullNodeURI,
 
 async function testParse(t, string, expectedTree, expectedResult) {
   const tree = parse(string)
+  console.log(tree)
   t.deepEqual(tree, expectedTree)
   t.deepEqual(await evaluate(tree, defaultContext), expectedResult)
 }
@@ -41,6 +42,7 @@ const foo = Symbol.for('foo')
 // javascript
 const math = Symbol.for('Math')
 const sqrt = Symbol.for('sqrt')
+const name = Symbol.for('name')
 
 
 test('lisp-parser :: empty string', async t => {
@@ -89,10 +91,13 @@ test('lisp-parser :: javascript native', async t => {
 })
 
 test('lisp-parser :: very dotty', async t => {
-  await testParse(t, `
-    Math.(concat "sqr" "t")`,
+  await testParse(t, `Math.(concat "sqr" "t")`,
     [dot, math, [concat, "sqr", "t"]],
     Math.sqrt)
+  await testParse(t, `
+    Math.sqrt.name`,
+    [dot, math, sqrt, name],
+    Math.sqrt.name)
 })
 
 test('lisp-parser :: nested', async t => {
