@@ -94,9 +94,21 @@ test('lisp-parser :: very dotty', async t => {
   await testParse(t, `Math.(concat "sqr" "t")`,
     [dot, math, [concat, "sqr", "t"]],
     Math.sqrt)
-  await testParse(t, `
-    Math.sqrt.name`,
+  await testParse(t,
+    `Math.sqrt.name`,
     [dot, math, sqrt, name],
+    Math.sqrt.name)
+  await testParse(t,
+    `(. Math sqrt name)`,
+    [dot, math, sqrt, name],
+    Math.sqrt.name)
+  await testParse(t,
+    `(. Math sqrt "name")`,
+    [dot, math, sqrt, "name"],
+    Math.sqrt.name)
+  await testParse(t,
+    `(. Math sqrt (concat "na" "me"))`,
+    [dot, math, sqrt, [concat, "na", "me"]],
     Math.sqrt.name)
 })
 

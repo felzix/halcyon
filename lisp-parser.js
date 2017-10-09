@@ -21,6 +21,7 @@ atom
   / boolean
   / string
   / symbol
+  / "." { return Symbol.for(".") }
 
 list
   = "(" _ args:sexpr* _ ")" { return args === null ? [] : args }
