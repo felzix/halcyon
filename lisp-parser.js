@@ -19,7 +19,11 @@ atom
   / integer
   / boolean
   / string
+  / dotty
   / symbol
+
+dotty
+  = f:symbol "." r:sexpr { return [Symbol.for("."), f].concat([r]) }
 
 symbol
   = symbolic+ (symbolic[0-9])* { return Symbol.for(text()) }
@@ -42,7 +46,7 @@ quoted
   / '\\\\"' { return '"' }
   / '\\\\'
 
-symbolic = [a-zA-Z.+*/-]
+symbolic = [a-zA-Z+*/-]
 _ = [ \\t\\n]*
 `
 const parser = generate(grammar)
@@ -225,7 +229,9 @@ export const defaultContext = {
 }
 
 export async function evaluate(tree, context) {
-  if (typeof tree !== 'object') {
+  if (typeof context === 'undefined') {
+    throw 'Function `evaluate` must be called with a context.'
+  } else if (typeof tree !== 'object') {
     return await evoke(tree, context)
   } else if (tree.length === 0){
     return []
@@ -276,6 +282,24 @@ export async function evaluate(tree, context) {
           const arg = await evaluate(rest[0], context)
           const body = `(block ${arg})`
           return await evaluate(parser.parse(body), context)
+        }
+      }
+      case '.': {
+        if (rest.length < 2) {
+          return { error: '`.` takes at least 2 arguments' }
+        } else {
+          let container = await evaluate(rest[0], context)
+          const elements = rest.slice(1)
+          for (let i = 0; i < elements.length; i++) {
+            let element = elements[i]
+            if (typeof element === 'symbol') {
+              element = description(element)
+            } else {
+              element = await evaluate(element, context)
+            }
+            container = container[element]
+          }
+          return container
         }
       }
       default: {

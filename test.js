@@ -28,6 +28,7 @@ const add = Symbol.for('+')
 const subtract = Symbol.for('-')
 const multiply = Symbol.for('*')
 const divide = Symbol.for('/')
+const dot = Symbol.for('.')
 
 
 // user-defined
@@ -38,7 +39,8 @@ const double = Symbol.for('double')
 const foo = Symbol.for('foo')
 
 // javascript
-const math_sqrt = Symbol.for('Math.sqrt')
+const math = Symbol.for('Math')
+const sqrt = Symbol.for('sqrt')
 
 
 test('lisp-parser :: empty string', async t => {
@@ -51,7 +53,7 @@ test('lisp-parser :: empty list', async t => {
 })
 
 test('lisp-parser :: symbol', async t => {
-  await testParse(t, 'Math.sqrt', math_sqrt, Math.sqrt)
+  await testParse(t, 'Math.sqrt', [dot, math, sqrt], Math.sqrt)
 })
 
 test('lisp-parser :: atom', async t => {
@@ -83,7 +85,14 @@ test('lisp-parser :: arithmetic', async t => {
 })
 
 test('lisp-parser :: javascript native', async t => {
-  await testParse(t, '(Math.sqrt 4)', [math_sqrt, 4], Math.sqrt(4))
+  await testParse(t, '(Math.sqrt 4)', [[dot, math, sqrt], 4], Math.sqrt(4))
+})
+
+test('lisp-parser :: very dotty', async t => {
+  await testParse(t, `
+    Math.(concat "sqr" "t")`,
+    [dot, math, [concat, "sqr", "t"]],
+    Math.sqrt)
 })
 
 test('lisp-parser :: nested', async t => {
