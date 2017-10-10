@@ -143,6 +143,14 @@ test('lisp-parser :: list', async t => {
   )
 })
 
+test('lisp-parser :: mapping', async t => {
+  t.deepEqual(await parseAndEval(`
+    (mapping '(
+      ("a" 26)
+      ("b" 25)))`),
+    {"a": 26, "b": 25})
+})
+
 test('lisp-parser :: append', async t => {
   t.deepEqual(
     await parseAndEval(`(append '(12 14) '("friends"))`),
@@ -324,7 +332,7 @@ test('lisp-parser :: html', async t => {
     '<div>stuff and &lt;br/&gt; stuff</div>')
 })
 
-// TODO cannot do ajax in node, where the test runs
+// TODO cannot do ajax in nodejs, where the test runs
 test.skip('lisp-parser :: node', async t => {
   const result = await parseAndEval(`(node "robert+todo:latest")`)
   t.is(result, 'hi')

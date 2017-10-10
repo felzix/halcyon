@@ -237,6 +237,19 @@ export const defaultContext = {
         data
       })
       return datum
+    },
+    mapping: (...args) => {
+      if (args.length !== 1) {
+        return { error: '`mapping` takes exactly 1 argument' }
+      } else {
+        const pairs = args[0]
+        const mapping = {}
+        for (let i = 0; i < pairs.length; i++) {
+          const [key, value] = pairs[i]
+          mapping[key] = value
+        }
+        return mapping
+      }
     }
   }
 }
