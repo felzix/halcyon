@@ -9,11 +9,18 @@ import node from './node'
 
 
 const grammar = `
+{
+  function log(thing) {
+    console.log(thing)
+  }
+}
+
 sexpr
   = _ d:dotty _ { return d }
   / _ a:atom _ { return a }
   / _ s:shorthandQuote _ { return s }
   / _ l:list _  { return l }
+  / _ m:mapping _ { return m }
 
 atom
   = float
@@ -25,6 +32,12 @@ atom
 
 list
   = "(" _ args:sexpr* _ ")" { return args === null ? [] : args }
+
+mapping
+  = "{" p:pair* "}" { return [Symbol.for('mapping'), [Symbol.for('list')].concat(p)] }
+
+pair
+  = _ k:sexpr _ ":" _ v:sexpr _ { return [Symbol.for('list'), k, v] }
 
 dotty
   = f:symbol r:innerDotty+ { return [Symbol.for("."), f].concat(r) }
@@ -243,6 +256,7 @@ export const defaultContext = {
         return { error: '`mapping` takes exactly 1 argument' }
       } else {
         const pairs = args[0]
+        console.log(args)
         const mapping = {}
         for (let i = 0; i < pairs.length; i++) {
           const [key, value] = pairs[i]

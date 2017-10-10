@@ -151,6 +151,18 @@ test('lisp-parser :: mapping', async t => {
     {"a": 26, "b": 25})
 })
 
+test('lisp-parser :: mapping syntax', async t => {
+  t.deepEqual(await parseAndEval(`
+    {"a": 26 "b": 25}`),
+    {"a": 26, "b": 25})
+  t.deepEqual(await parseAndEval(`
+    {"a": (concat "ui" "all") "b": 25}`),
+    {"a": "uiall", "b": 25})
+  t.deepEqual(await parseAndEval(`
+    {"a": (concat "ui" "all") (+ 7 8) : 25}`),
+    {"a": "uiall", 15: 25})
+})
+
 test('lisp-parser :: append', async t => {
   t.deepEqual(
     await parseAndEval(`(append '(12 14) '("friends"))`),
