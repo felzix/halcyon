@@ -7,7 +7,7 @@ import ReactDOMServer from 'react-dom/server';
 
 import { parse, evaluate, buildLambdaString, defaultContext, makeInterpreter } from './lisp-parser'
 import parseAndEval from './lisp-parser'
-import { sha256, setNode, getNode, decodeNodeURI, encodeFullNodeURI,
+import { sha256, setNode, getNode, decodeNodeURI, decodeNodeURN, encodeFullNodeURI,
          readJsonFile, writeJsonFile } from './node'
 
 
@@ -376,15 +376,23 @@ test('node :: set-get', async t => {
 })
 
 test('node :: encode-decode', async t => {
-  const owner = 'robert', name = 'todo', version = 'latest'
-  t.is(encodeFullNodeURI(owner, name, version), 'node://robert+todo:latest')
-  t.deepEqual(decodeNodeURI('node://robert+todo:latest'),
+  const owner = 'robert', name = 'todo', version = 'unversioned'
+  t.is(encodeFullNodeURI(owner, name, version), 'node://robert+todo:unversioned')
+  t.deepEqual(decodeNodeURI('node://robert+todo:unversioned'),
     { owner, name, version })
   t.deepEqual(decodeNodeURI('node://robert+todo'),
     { owner, name, version: 'unversioned' })
-  t.deepEqual(decodeNodeURI('node://todo:latest', owner),
+  t.deepEqual(decodeNodeURI('node://todo:unversioned', owner),
     { owner, name, version })
   t.deepEqual(decodeNodeURI('node://todo', owner),
+    { owner, name, version: 'unversioned' })
+  t.deepEqual(decodeNodeURN('robert+todo:unversioned'),
+    { owner, name, version })
+  t.deepEqual(decodeNodeURN('robert+todo', owner, version),
+    { owner, name, version: 'unversioned' })
+  t.deepEqual(decodeNodeURN('todo:unversioned', owner, version),
+    { owner, name, version })
+  t.deepEqual(decodeNodeURN('todo', owner, version),
     { owner, name, version: 'unversioned' })
 })
 

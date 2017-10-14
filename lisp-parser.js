@@ -228,7 +228,8 @@ export const defaultContext = {
         return { error: '`node` requires exactly 1 argument' }
       }
       const urn = args[0]
-      const { owner, name, version } = node.decodeNodeURN(urn)
+      // TODO get defaults from config
+      const { owner, name, version } = node.decodeNodeURN(urn, 'robert', 'unversioned')
       const datum = await $.ajax({
         type: "GET",
         url: `http://localhost:41814/${owner}/${name}/${version}`
