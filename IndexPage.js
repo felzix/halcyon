@@ -108,13 +108,14 @@ class CommandLineInput extends React.Component {
       historyPosition: null
      }
 
-    this.handleSubmit = this.handleSubmit.bind(this);
-    this.setInputElement = this.setInputElement.bind(this);
-    this.handleKeyboard = this.handleKeyboard.bind(this);
-    this.handleKeyUp = this.handleKeyUp.bind(this);
-    this.handleKeyDown = this.handleKeyDown.bind(this);
-    this.handleClick = this.handleClick.bind(this);
-    this.handleUnclick = this.handleUnclick.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this)
+    this.setInputElement = this.setInputElement.bind(this)
+    this.handleKeyboard = this.handleKeyboard.bind(this)
+    this.handleKeyUp = this.handleKeyUp.bind(this)
+    this.handleKeyDown = this.handleKeyDown.bind(this)
+    this.handleClick = this.handleClick.bind(this)
+    this.handleUnclick = this.handleUnclick.bind(this)
+    this.handleOnPaste = this.handleOnPaste.bind(this)
   }
 
   componentDidMount() {
@@ -161,13 +162,11 @@ class CommandLineInput extends React.Component {
       return  // printable so do nothing
     }
 
-    event.preventDefault()  // here instead of earlier so the event will propagate if it's printable
+    let preventDefault = true
 
     // NOTE: Every event here has a match in handleKeyUp so beware duplication
     switch(key) {
       case 'Backspace': {
-        event.preventDefault()
-
         if (cursorStart === cursorEnd) {
           cursorStart -= 1  // if no selection, delete 1 left of cursor
         }
@@ -185,8 +184,6 @@ class CommandLineInput extends React.Component {
         return
       }
       case 'Delete': {
-        event.preventDefault()
-
         if (cursorStart === cursorEnd) {
           cursorEnd += 1  // if no selection, delete 1 right of cursor
         }
@@ -217,7 +214,6 @@ class CommandLineInput extends React.Component {
 
         let { start, end } = this.inbounds(cursorStart, cursorEnd, value.length)
         this.setState({ cursorStart: start, cursorEnd: end })
-        event.preventDefault()
         break
       }
       case 'ArrowRight': {
@@ -235,7 +231,6 @@ class CommandLineInput extends React.Component {
         }
         let { start, end } = this.inbounds(cursorStart, cursorEnd, max)
         this.setState({ cursorStart: start, cursorEnd: end })
-        event.preventDefault()
         break
       }
       case 'ArrowUp': {
@@ -302,19 +297,28 @@ class CommandLineInput extends React.Component {
        break
       }
       case 'v': {
-        if (metaKey && !(ctrlKey || shiftKey || altKey)) {  // copy to clipboard
-          document.execCommand("paste")
-          // TODO cursors
+        if (metaKey && !(ctrlKey || shiftKey || altKey)) {  // paste from clipboard
+          // Nothing to do here. This is dealt with via the onPaste handler.
+          // It's not possible to paste from javascript w/o an extension overriding security.
+          preventDefault = false
         }
         break
       }
       case 'x': {
-        if (metaKey && !(ctrlKey || shiftKey || altKey)) {  // copy to clipboard
+        if (metaKey && !(ctrlKey || shiftKey || altKey)) {  // cut to clipboard
           document.execCommand("cut")
-          // TODO cursors
+          this.setState({
+            value: value.slice(0, cursorStart) + value.slice(cursorEnd, value.length),
+            cursorStart,
+            cursorEnd: cursorStart
+          })
         }
         break
       }
+    }
+
+    if (preventDefault) {
+      event.preventDefault()
     }
   }
 
@@ -332,6 +336,14 @@ class CommandLineInput extends React.Component {
 
     this.addText(key)
     event.preventDefault()
+  }
+
+  handleOnPaste(event) {
+    event.stopPropagation()
+    event.preventDefault()
+    const { target, clipboardData } = event
+    const text = clipboardData.getData('Text')
+    this.addText(text)
   }
 
   handleClick(event) {
@@ -409,6 +421,7 @@ class CommandLineInput extends React.Component {
                  onKeyDown={this.handleKeyDown}
                  onMouseDown={this.handleClick}
                  onMouseUp={this.handleUnclick}
+                 onPaste={this.handleOnPaste}
                  ref={this.setInputElement}/>
         </label>
       </form>
