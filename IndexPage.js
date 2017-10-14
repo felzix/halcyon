@@ -315,6 +315,33 @@ class CommandLineInput extends React.Component {
         }
         break
       }
+      case '1': {  // switch to another tab
+        preventDefault = false
+      }
+      case '2': {  // switch to another tab
+        preventDefault = false
+      }
+      case '3': {  // switch to another tab
+        preventDefault = false
+      }
+      case '4': {  // switch to another tab
+        preventDefault = false
+      }
+      case '5': {  // switch to another tab
+        preventDefault = false
+      }
+      case '6': {  // switch to another tab
+        preventDefault = false
+      }
+      case '7': {  // switch to another tab
+        preventDefault = false
+      }
+      case '8': {  // switch to another tab
+        preventDefault = false
+      }
+      case '9': {  // switch to another tab
+        preventDefault = false
+      }
     }
 
     if (preventDefault) {
