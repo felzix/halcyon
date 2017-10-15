@@ -172,7 +172,7 @@ class CommandLineInput extends React.Component {
         }
 
         if (cursorStart < 0) {  // can't delete past the beginning of the line
-          return
+          break
         }
 
         this.setState({
@@ -181,7 +181,7 @@ class CommandLineInput extends React.Component {
           cursorEnd: cursorStart
         })
 
-        return
+        break
       }
       case 'Delete': {
         if (cursorStart === cursorEnd) {
@@ -189,7 +189,7 @@ class CommandLineInput extends React.Component {
         }
 
         if (cursorEnd > value.length) {  // can't delete past the end of the line
-          return
+          break
         }
 
         this.setState({
@@ -198,7 +198,7 @@ class CommandLineInput extends React.Component {
           cursorEnd: cursorStart
         })
 
-        return
+        break
       }
       case 'ArrowLeft': {
         if (metaKey && shiftKey) {  // select from here to beginning
@@ -252,7 +252,7 @@ class CommandLineInput extends React.Component {
         let { historyPosition } = this.state
         let { history } = this.props
         if (historyPosition === null) {  // already past the end
-          return
+          break
         } else {
           historyPosition += 1
           if (historyPosition >= history.length) {  // go past the end
