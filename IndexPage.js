@@ -167,12 +167,23 @@ class CommandLineInput extends React.Component {
     // NOTE: Every event here has a match in handleKeyUp so beware duplication
     switch(key) {
       case 'Backspace': {
+        if (altKey) {
+          cursorStart -= 1
+          while (cursorStart >= 0) {
+            const char = value[cursorStart - 1]
+            if (!this.isWordChar(char)) {
+              break
+            }
+            // TODO handle skipping whitespace OR words instead of only ever words
+            cursorStart -= 1
+          }
+        }
         if (cursorStart === cursorEnd) {
           cursorStart -= 1  // if no selection, delete 1 left of cursor
         }
 
         if (cursorStart < 0) {  // can't delete past the beginning of the line
-          break
+          cursorStart = 0
         }
 
         this.setState({
@@ -184,12 +195,23 @@ class CommandLineInput extends React.Component {
         break
       }
       case 'Delete': {
+        if (altKey) {  // delete one word
+          cursorEnd += 1
+          while (cursorEnd < value.length) {
+            const char = value[cursorEnd]
+            if (!this.isWordChar(char)) {
+              break
+            }
+            // TODO handle skipping whitespace OR words instead of only ever words
+            cursorEnd += 1
+          }
+        }
         if (cursorStart === cursorEnd) {
           cursorEnd += 1  // if no selection, delete 1 right of cursor
         }
 
         if (cursorEnd > value.length) {  // can't delete past the end of the line
-          break
+          cursorEnd = value.length
         }
 
         this.setState({
