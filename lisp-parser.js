@@ -242,7 +242,7 @@ export const defaultContext = {
       }
       const urn = args[0]
       const data = args[1]
-      const { owner, name, version } = node.decodeNodeURN(urn)
+      const { owner, name, version } = node.decodeNodeURN(urn, 'robert', 'unversioned')
       const datum = await $.ajax({
         type: "PUT",
         url: `http://localhost:41814/${owner}/${name}/${version}`,
