@@ -50,14 +50,26 @@ class App extends React.Component {
       { key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey })
   }
 
+  // Just send (most) everything to the CLI.
   handleKeyDown(event) {
-    event.stopPropagation()
-    this.props.cliElement.focus()
     const { key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey } = event
-    ReactTestUtils.Simulate.keyDown(this.props.cliElement,
-      { key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey })
+
+    if (key === 'c' && metaKey) {  // copy
+      return
+    } else if (key === 'x' && metaKey) {  // cut
+      return
+    } else if (key === 'Control' || key === 'Shift' || key === 'Alt' || key === 'Meta') {
+      return  // give copy etc a chance to be captured here instead of passing through to CLI
+    } else {  // pass along to CLI
+      event.stopPropagation()
+      this.props.cliElement.focus()
+      console.log(key)
+      ReactTestUtils.Simulate.keyDown(this.props.cliElement,
+        { key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey })
+    }
   }
 
+  // Just send everything to the CLI.
   handleKeyUp(event) {
     event.stopPropagation()
     this.props.cliElement.focus()

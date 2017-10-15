@@ -18,9 +18,11 @@ export function text(thing, color) {
   } else if (typeof thing === 'function') {
     thing = `[Function: ${thing.name}]`
   }
-  
+
   return (
-    <pre style={style}>{thing}</pre>
+    <pre style={style}>
+      {thing}
+    </pre>
   )
 }
 
