@@ -205,8 +205,21 @@ class CommandLineInput extends React.Component {
           cursorStart = 0
         } else if (metaKey && !shiftKey) {  // go to beginning
           cursorStart = cursorEnd = 0
-        } else if (shiftKey && !metaKey) {  // select one more to the left
+        } else if (shiftKey && !(metaKey || altKey)) {  // select one more to the left
           cursorStart -= 1
+        } else if (altKey) {  // move or select one word to the left
+          cursorStart -= 1
+          while (cursorStart >= 0) {
+            const char = value[cursorStart - 1]
+            if (!this.isWordChar(char)) {
+              break
+            }
+            // TODO handle skipping whitespace OR words instead of only ever words
+            cursorStart -= 1
+          }
+          if (!shiftKey) {  // just move, don't select
+            cursorEnd = cursorStart
+          }
         } else {  // move one to the left
           cursorStart -= 1
           cursorEnd = cursorStart
@@ -223,8 +236,21 @@ class CommandLineInput extends React.Component {
           cursorEnd = max
         } else if (metaKey && !shiftKey) {  // go to ending
           cursorEnd = cursorStart = max
-        } else if (shiftKey && !metaKey) {  // select one more to the right
+        } else if (shiftKey && !(metaKey || altKey)) {  // select one more to the right
           cursorEnd += 1
+        } else if (altKey) {
+          cursorEnd += 1
+          while (cursorEnd < value.length) {
+            const char = value[cursorEnd]
+            if (!this.isWordChar(char)) {
+              break
+            }
+            // TODO handle skipping whitespace OR words instead of only ever words
+            cursorEnd += 1
+          }
+          if (!shiftKey) {  // just move, don't select
+            cursorStart = cursorEnd
+          }
         } else {  // move one to the right
           cursorEnd += 1
           cursorStart = cursorEnd
@@ -411,6 +437,10 @@ class CommandLineInput extends React.Component {
     start = start > max ? max : start
     end = end > max ? max : end
     return { start, end }
+  }
+
+  isWordChar(char) {
+    return (/\w/).test(char)
   }
 
   async recordCommand(command) {
