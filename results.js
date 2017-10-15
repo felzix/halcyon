@@ -1,4 +1,6 @@
 import React from 'react'
+import CodeMirror from 'react-codemirror'
+
 import store from './store'
 import { setConfig, setNodeMap, setDataMap } from './reducer'
 import { readJsonFile } from './node'
@@ -47,4 +49,35 @@ export function uploadConfig() {
       Upload JSON config file.
       <input type="file" id="loadConfigFileInput" onChange={onChange}/>
     </div>)
+}
+
+export class Editor extends React.Component {
+  constructor(props) {
+    super(props)
+    this.handleKeyPress = this.handleKeyPress.bind(this)
+    this.handleKeyUp = this.handleKeyUp.bind(this)
+    this.handleKeyDown = this.handleKeyDown.bind(this)
+  }
+
+  handleKeyPress(event) {
+    event.stopPropagation()
+  }
+
+  handleKeyUp(event) {
+    event.stopPropagation()
+  }
+
+  handleKeyDown(event) {
+    event.stopPropagation()
+  }
+
+  render() {
+    return (
+      <div onKeyPress={this.handleKeyPress}
+           onKeyUp={this.handleKeyUp}
+           onKeyDown={this.handleKeyDown}>
+        <CodeMirror value={this.props.value}
+                    options={this.props.options}/>
+      </div>)
+  }
 }

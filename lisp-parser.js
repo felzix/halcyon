@@ -5,6 +5,7 @@ import $ from 'jquery'
 import { generate } from 'pegjs'
 import React from 'react'
 
+import { Editor } from './results'
 import node from './node'
 
 
@@ -265,6 +266,11 @@ export const defaultContext = {
         }
         return mapping
       }
+    },
+    edit: (...args) => {
+      const initialText = args.length === 0 ? '' : args[0]
+      return React.createElement(Editor,
+        { value: initialText, options: { lineNumbers: true } })
     }
   }
 }

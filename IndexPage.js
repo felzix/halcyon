@@ -63,7 +63,6 @@ class App extends React.Component {
     } else {  // pass along to CLI
       event.stopPropagation()
       this.props.cliElement.focus()
-      console.log(key)
       ReactTestUtils.Simulate.keyDown(this.props.cliElement,
         { key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey })
     }
