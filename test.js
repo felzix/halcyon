@@ -376,24 +376,26 @@ test('node :: set-get', async t => {
 })
 
 test('node :: encode-decode', async t => {
-  const owner = 'robert', name = 'todo', version = 'unversioned'
-  t.is(encodeFullNodeURI(owner, name, version), 'node://robert+todo:unversioned')
-  t.deepEqual(decodeNodeURI('node://robert+todo:unversioned'),
+  const owner = 'draxxa', name = 'todo', version = 'so versioned'
+  const defaultOwner = 'robert', defaultVersion = 'unversioned'
+  t.is(encodeFullNodeURI(owner, name, version), 'node://draxxa+todo:so versioned')
+  t.deepEqual(decodeNodeURI('node://draxxa+todo:so versioned', defaultOwner),
     { owner, name, version })
-  t.deepEqual(decodeNodeURI('node://robert+todo'),
-    { owner, name, version: 'unversioned' })
-  t.deepEqual(decodeNodeURI('node://todo:unversioned', owner),
+  t.deepEqual(decodeNodeURI('node://draxxa+todo', defaultOwner),
+    { owner, name, version: defaultVersion })
+  t.deepEqual(decodeNodeURI('node://todo:so versioned', defaultOwner),
+    { owner: defaultOwner, name, version })
+  t.deepEqual(decodeNodeURI('node://todo', defaultOwner),
+    { owner: defaultOwner, name, version: defaultVersion })
+
+  t.deepEqual(decodeNodeURN('draxxa+todo:so versioned', defaultOwner, defaultVersion),
     { owner, name, version })
-  t.deepEqual(decodeNodeURI('node://todo', owner),
-    { owner, name, version: 'unversioned' })
-  t.deepEqual(decodeNodeURN('robert+todo:unversioned'),
-    { owner, name, version })
-  t.deepEqual(decodeNodeURN('robert+todo', owner, version),
-    { owner, name, version: 'unversioned' })
-  t.deepEqual(decodeNodeURN('todo:unversioned', owner, version),
-    { owner, name, version })
-  t.deepEqual(decodeNodeURN('todo', owner, version),
-    { owner, name, version: 'unversioned' })
+  t.deepEqual(decodeNodeURN('draxxa+todo', defaultOwner, defaultVersion),
+    { owner, name, version: defaultVersion })
+  t.deepEqual(decodeNodeURN('todo:so versioned', defaultOwner, defaultVersion),
+    { owner: defaultOwner, name, version })
+  t.deepEqual(decodeNodeURN('todo', defaultOwner, defaultVersion),
+    { owner: defaultOwner, name, version: defaultVersion })
 })
 
 test('node :: server-side write-read', async t => {

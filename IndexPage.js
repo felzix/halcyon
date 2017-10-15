@@ -573,6 +573,7 @@ CommandLineInput = connect(
   })(CommandLineInput)
 
 const globalEval = eval  // this magically makes eval's scope global
+
 function interpretCommand(command, lispInterpreter) {
   return new Promise(async resolve => {
     switch(command) {
@@ -600,6 +601,8 @@ async function interpretLisp(command, lispInterpreter) {
   const result = await lispInterpreter(command)
   if (typeof result.$$typeof === 'symbol') {  // probably a React element
     return result
+  } else if (typeof result.error !== 'undefined') {  // error
+    return text(result.error, 'red')
   } else {  // wrap in React element
     return text(result)
   }
