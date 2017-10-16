@@ -337,13 +337,36 @@ const builtins = {
       return container
     }
   },
-  load: (context, rest) => {
+  load: async (context, rest) => {
     if (rest.length !== 1) {
       return { error: '`load` takes exactly 1 argument' }
     } else {
-      const sisterContext = { parent: context.parent, definitions: {}}
-      context.child = sisterContext
-      context = sisterContext
+      const definitions = await evaluate(rest[0], context)
+      const newOlderSister = Object.assign({}, context)
+      newOlderSister.child = context
+      context.parent = newOlderSister
+      if (typeof newOlderSister.parent !== 'undefined') {
+        newOlderSister.parent.child = newOlderSister
+      }
+      context.definitions = definitions
+      return context  // yes, actually returns context to user; TODO read-only
+    }
+  },
+  unload: async (context, rest) => {
+    if (rest.length !== 1) {
+      return { error: '`unload` takes exactly 1 argument' }
+    } else {
+      const contextToUnload = await evaluate(rest[0], context)
+      if (contextToUnload.parent) {
+        contextToUnload.parent.child = contextToUnload.child
+      }
+      if (contextToUnload.child) {
+        contextToUnload.child.parent = contextToUnload.parent
+      }
+
+      if (contextToUnload === context) {  // must have some context so use parent
+        Object.assign(context, contextToUnload.parent)
+      }
     }
   }
 }

@@ -245,6 +245,22 @@ test('lisp-parser :: util :: buildLambdaString', async t => {
     })`)
 })
 
+test('lisp-parser :: load-unload', async t => {
+  t.is(await parseAndEval(`
+    (block
+      (def foo 12)
+      (load {"foo": 19})
+      foo)`),
+    19)
+  t.is(await parseAndEval(`
+    (block
+      (def foo 12)
+      (def callow (load {"foo": 19}))
+      (unload callow)
+      foo)`),
+    12)
+})
+
 test('lisp-parser :: lambda', async t => {
   await testParse(t, `
     (block
