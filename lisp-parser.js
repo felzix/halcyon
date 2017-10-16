@@ -155,6 +155,102 @@ function description(symbol) {
   return String(symbol).slice(7, -1) || null
 }
 
+const builtins = {
+  quote: (context, rest) => {
+    if (rest.length !== 1) {
+      return { error: '`quote` must have exactly 1 argument' }
+    } else {
+      return rest[0]  // don't interpret the rest
+    }
+  },
+  def: async (context, rest) => {
+    if (rest.length !== 2) {
+      return { error: '`def` must have exactly 2 arguments' }
+    } else {
+      const symbol = rest[0]
+      const value = await evaluate(rest[1], context)
+      context.definitions[description(symbol)] = value
+      return value
+    }
+  },
+  block: async (context, rest) => {
+    const blockContext = { parent: context, definitions: {} }
+    context.child = blockContext  // probably not useful *here* but is consistent with `load`
+    let finalValue
+    for (let i = 0; i < rest.length; i++) {
+      finalValue = await evaluate(rest[i], blockContext)
+    }
+    return finalValue
+  },
+  lambda: (context, rest) => {
+    if (rest.length < 2) {
+      return { error: '`lambda` must have an arguments list and at least one statement' }
+    } else {
+      // context comes from the local scope right here
+      return eval(buildLambdaString(rest))
+    }
+  },
+  eval: async (context, rest) => {
+    if (rest.length !== 1) {
+      return { error: '`eval` must have exactly 1 argument' }
+    } else {
+      const arg = await evaluate(rest[0], context)
+      const body = `(block ${arg})`
+      return await evaluate(parser.parse(body), context)
+    }
+  },
+  '.': async (context, rest) => {
+    if (rest.length < 2) {
+      return { error: '`.` takes at least 2 arguments' }
+    } else {
+      let container = await evaluate(rest[0], context)
+      const elements = rest.slice(1)
+      for (let i = 0; i < elements.length; i++) {
+        let element = elements[i]
+        if (typeof element === 'symbol') {
+          element = description(element)
+        } else {
+          element = await evaluate(element, context)
+        }
+        container = container[element]
+      }
+      return container
+    }
+  },
+  load: async (context, rest) => {
+    if (rest.length !== 1) {
+      return { error: '`load` takes exactly 1 argument' }
+    } else {
+      const definitions = await evaluate(rest[0], context)
+      const newOlderSister = Object.assign({}, context)
+      newOlderSister.child = context
+      context.parent = newOlderSister
+      if (typeof newOlderSister.parent !== 'undefined') {
+        newOlderSister.parent.child = newOlderSister
+      }
+      context.definitions = definitions
+      return context  // yes, actually returns context to user; TODO read-only
+    }
+  },
+  unload: async (context, rest) => {
+    if (rest.length !== 1) {
+      return { error: '`unload` takes exactly 1 argument' }
+    } else {
+      const contextToUnload = await evaluate(rest[0], context)
+      if (contextToUnload.parent) {
+        contextToUnload.parent.child = contextToUnload.child
+      }
+      if (contextToUnload.child) {
+        contextToUnload.child.parent = contextToUnload.parent
+      }
+
+      if (contextToUnload === context) {  // must have some context so use parent
+        Object.assign(context, contextToUnload.parent)
+      }
+    }
+  }
+}
+
 export const defaultContext = {
   parent: undefined,  // written here for later clarity
   child: undefined,  // written here for later clarity
@@ -271,102 +367,6 @@ export const defaultContext = {
       const initialText = args.length === 0 ? '' : args[0]
       return React.createElement(Editor,
         { value: initialText, options: { lineNumbers: true } })
-    }
-  }
-}
-
-const builtins = {
-  quote: (context, rest) => {
-    if (rest.length !== 1) {
-      return { error: '`quote` must have exactly 1 argument' }
-    } else {
-      return rest[0]  // don't interpret the rest
-    }
-  },
-  def: async (context, rest) => {
-    if (rest.length !== 2) {
-      return { error: '`def` must have exactly 2 arguments' }
-    } else {
-      const symbol = rest[0]
-      const value = await evaluate(rest[1], context)
-      context.definitions[description(symbol)] = value
-      return value
-    }
-  },
-  block: async (context, rest) => {
-    const blockContext = { parent: context, definitions: {} }
-    context.child = blockContext  // probably not useful *here* but is consistent with `load`
-    let finalValue
-    for (let i = 0; i < rest.length; i++) {
-      finalValue = await evaluate(rest[i], blockContext)
-    }
-    return finalValue
-  },
-  lambda: (context, rest) => {
-    if (rest.length < 2) {
-      return { error: '`lambda` must have an arguments list and at least one statement' }
-    } else {
-      // context comes from the local scope right here
-      return eval(buildLambdaString(rest))
-    }
-  },
-  eval: async (context, rest) => {
-    if (rest.length !== 1) {
-      return { error: '`eval` must have exactly 1 argument' }
-    } else {
-      const arg = await evaluate(rest[0], context)
-      const body = `(block ${arg})`
-      return await evaluate(parser.parse(body), context)
-    }
-  },
-  '.': async (context, rest) => {
-    if (rest.length < 2) {
-      return { error: '`.` takes at least 2 arguments' }
-    } else {
-      let container = await evaluate(rest[0], context)
-      const elements = rest.slice(1)
-      for (let i = 0; i < elements.length; i++) {
-        let element = elements[i]
-        if (typeof element === 'symbol') {
-          element = description(element)
-        } else {
-          element = await evaluate(element, context)
-        }
-        container = container[element]
-      }
-      return container
-    }
-  },
-  load: async (context, rest) => {
-    if (rest.length !== 1) {
-      return { error: '`load` takes exactly 1 argument' }
-    } else {
-      const definitions = await evaluate(rest[0], context)
-      const newOlderSister = Object.assign({}, context)
-      newOlderSister.child = context
-      context.parent = newOlderSister
-      if (typeof newOlderSister.parent !== 'undefined') {
-        newOlderSister.parent.child = newOlderSister
-      }
-      context.definitions = definitions
-      return context  // yes, actually returns context to user; TODO read-only
-    }
-  },
-  unload: async (context, rest) => {
-    if (rest.length !== 1) {
-      return { error: '`unload` takes exactly 1 argument' }
-    } else {
-      const contextToUnload = await evaluate(rest[0], context)
-      if (contextToUnload.parent) {
-        contextToUnload.parent.child = contextToUnload.child
-      }
-      if (contextToUnload.child) {
-        contextToUnload.child.parent = contextToUnload.parent
-      }
-
-      if (contextToUnload === context) {  // must have some context so use parent
-        Object.assign(context, contextToUnload.parent)
-      }
     }
   }
 }
