@@ -20,10 +20,12 @@ async function testParse(t, string, expectedTree, expectedResult) {
 
 // built-ins
 const block = Symbol.for('block')
+const block_ = Symbol.for('block_')
 const list = Symbol.for('list')
 const quote = Symbol.for('quote')
 const def = Symbol.for('def')
 const lambda = Symbol.for('lambda')
+const lambda_ = Symbol.for('lambda!')
 const concat = Symbol.for('concat')
 const add = Symbol.for('+')
 const subtract = Symbol.for('-')
@@ -231,7 +233,7 @@ test('lisp-parser :: util :: buildLambdaString', async t => {
   const rest = [params, body]
   const context = {'parent': 'fake', 'definitions': {'foo': 'bar'}}
 
-  const string = buildLambdaString(rest, context)
+  const string = buildLambdaString(rest, 'block')
   t.is(string, `
     (async function(x, y) {
       if (arguments.length !== 2) {
@@ -270,9 +272,6 @@ test('lisp-parser :: lambda', async t => {
       [def, double, [lambda, [x], [multiply, x, 2]]],
       [double, 8]],
     16)
-})
-
-test('lisp-parser :: lambda multiparam', async t => {
   await testParse(t, `
     (block
       (def m (lambda (x y) (* x y)))
@@ -281,9 +280,6 @@ test('lisp-parser :: lambda multiparam', async t => {
       [def, m, [lambda, [x, y], [multiply, x, y]]],
       [m, 8, 3]],
     24)
-})
-
-test('lisp-parser :: lambda w/ string', async t => {
   await testParse(t, `
     (block
       (def x (lambda (x) (concat x ".")))
@@ -292,6 +288,21 @@ test('lisp-parser :: lambda w/ string', async t => {
       [def, x, [lambda, [x], [concat, x, '.']]],
       [x, 'A sentence']],
     'A sentence.')
+})
+
+test('lisp-parser :: lambda!', async t => {
+  await testParse(t, `
+    (block
+      (def foo (lambda! (x)
+        (def y 17)))
+      (foo 9)
+      (list x y))`,
+    [block,
+      [def, foo, [lambda_, [x],
+        [def, y, 17]]],
+      [foo, 9],
+      [list, x, y]],
+    [9, 17])
 })
 
 test('lisp-parser :: lambda wrong args', async t => {

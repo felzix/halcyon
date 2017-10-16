@@ -73,7 +73,7 @@ quoted
   / '\\\\"' { return '"' }
   / '\\\\'
 
-symbolic = [a-zA-Z+*/-]
+symbolic = [a-zA-Z!+*/-]
 _ = [ \\t\\n]*
 `
 const parser = generate(grammar)
@@ -119,7 +119,7 @@ function makeArithmetic(symbol, one, many) {
   }
 }
 
-export function buildLambdaString(rest) {
+export function buildLambdaString(rest, block) {
   const params = rest[0].map(p => { return description(p) })
   const locals = params.map(p => { return `[Symbol.for('def'), Symbol.for('${p}'), ${p}]` })
   const body = toJavascript(rest.slice(1))
@@ -129,7 +129,7 @@ export function buildLambdaString(rest) {
         return { error: 'has ' + arguments.length + ' arg(s) should have ' + ${params.length} + ' arg(s)'}
       }
       let body = [
-        Symbol.for('block'),
+        Symbol.for('${block}'),
           ${locals}]
       body = body.concat(${body})
       return await evaluate(body, context)
@@ -182,12 +182,27 @@ const builtins = {
     }
     return finalValue
   },
+  'block!': async (context, rest) => {  // syntactic necessity
+    let finalValue
+    for (let i = 0; i < rest.length; i++) {
+      finalValue = await evaluate(rest[i], context)
+    }
+    return finalValue
+  },
   lambda: (context, rest) => {
     if (rest.length < 2) {
       return { error: '`lambda` must have an arguments list and at least one statement' }
     } else {
       // context comes from the local scope right here
-      return eval(buildLambdaString(rest))
+      return eval(buildLambdaString(rest, 'block'))
+    }
+  },
+  'lambda!': (context, rest) => {
+    if (rest.length < 2) {
+      return { error: '`lambda` must have an arguments list and at least one statement' }
+    } else {
+      // context comes from the local scope right here
+      return eval(buildLambdaString(rest, 'block!'))  // note the `!`
     }
   },
   eval: async (context, rest) => {
