@@ -156,7 +156,8 @@ function description(symbol) {
 }
 
 export const defaultContext = {
-  parent: undefined,  // written here for clarity
+  parent: undefined,  // written here for later clarity
+  child: undefined,  // written here for later clarity
   definitions: {
     // important language stuff
     list: (...args) => { return args },
@@ -258,7 +259,6 @@ export const defaultContext = {
         return { error: '`mapping` takes exactly 1 argument' }
       } else {
         const pairs = args[0]
-        console.log(args)
         const mapping = {}
         for (let i = 0; i < pairs.length; i++) {
           const [key, value] = pairs[i]
@@ -295,6 +295,7 @@ const builtins = {
   },
   block: async (context, rest) => {
     const blockContext = { parent: context, definitions: {} }
+    context.child = blockContext  // probably not useful *here* but is consistent with `load`
     let finalValue
     for (let i = 0; i < rest.length; i++) {
       finalValue = await evaluate(rest[i], blockContext)
@@ -334,6 +335,15 @@ const builtins = {
         container = container[element]
       }
       return container
+    }
+  },
+  load: (context, rest) => {
+    if (rest.length !== 1) {
+      return { error: '`load` takes exactly 1 argument' }
+    } else {
+      const sisterContext = { parent: context.parent, definitions: {}}
+      context.child = sisterContext
+      context = sisterContext
     }
   }
 }
