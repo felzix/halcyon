@@ -275,6 +275,69 @@ export const defaultContext = {
   }
 }
 
+const builtins = {
+  quote: (context, rest) => {
+    if (rest.length !== 1) {
+      return { error: '`quote` must have exactly 1 argument' }
+    } else {
+      return rest[0]  // don't interpret the rest
+    }
+  },
+  def: async (context, rest) => {
+    if (rest.length !== 2) {
+      return { error: '`def` must have exactly 2 arguments' }
+    } else {
+      const symbol = rest[0]
+      const value = await evaluate(rest[1], context)
+      context.definitions[description(symbol)] = value
+      return value
+    }
+  },
+  block: async (context, rest) => {
+    const blockContext = { parent: context, definitions: {} }
+    let finalValue
+    for (let i = 0; i < rest.length; i++) {
+      finalValue = await evaluate(rest[i], blockContext)
+    }
+    return finalValue
+  },
+  lambda: (context, rest) => {
+    if (rest.length < 2) {
+      return { error: '`lambda` must have an arguments list and at least one statement' }
+    } else {
+      // context comes from the local scope right here
+      return eval(buildLambdaString(rest))
+    }
+  },
+  eval: async (context, rest) => {
+    if (rest.length !== 1) {
+      return { error: '`eval` must have exactly 1 argument' }
+    } else {
+      const arg = await evaluate(rest[0], context)
+      const body = `(block ${arg})`
+      return await evaluate(parser.parse(body), context)
+    }
+  },
+  '.': async (context, rest) => {
+    if (rest.length < 2) {
+      return { error: '`.` takes at least 2 arguments' }
+    } else {
+      let container = await evaluate(rest[0], context)
+      const elements = rest.slice(1)
+      for (let i = 0; i < elements.length; i++) {
+        let element = elements[i]
+        if (typeof element === 'symbol') {
+          element = description(element)
+        } else {
+          element = await evaluate(element, context)
+        }
+        container = container[element]
+      }
+      return container
+    }
+  }
+}
+
 export async function evaluate(tree, context) {
   if (typeof context === 'undefined') {
     throw 'Function `evaluate` must be called with a context.'
@@ -287,75 +350,15 @@ export async function evaluate(tree, context) {
   let first = tree[0]
   let rest = tree.slice(1)
   if (typeof first === 'symbol') {
-    switch (description(first)) {
-      case "quote": {
-        if (rest.length !== 1) {
-          return { error: '`quote` must have exactly 1 argument' }
-        } else {
-          return rest[0]  // don't interpret the rest
-        }
-      }
-      case 'def': {
-        if (rest.length !== 2) {
-          return { error: '`def` must have exactly 2 arguments' }
-        } else {
-          const symbol = rest[0]
-          const value = await evaluate(rest[1], context)
-          context.definitions[description(symbol)] = value
-          return value
-        }
-        break
-      }
-      case 'block': {
-        const blockContext = { parent: context, definitions: {} }
-        let finalValue
-        for (let i = 0; i < rest.length; i++) {
-          finalValue = await evaluate(rest[i], blockContext)
-        }
-        return finalValue
-      }
-      case 'lambda': {
-        if (rest.length < 2) {
-          return { error: '`lambda` must have an arguments list and at least one statement' }
-        } else {
-          // context comes from the local scope right here
-          return eval(buildLambdaString(rest))
-        }
-      }
-      case 'eval': {
-        if (rest.length !== 1) {
-          return { error: '`eval` must have exactly 1 argument' }
-        } else {
-          const arg = await evaluate(rest[0], context)
-          const body = `(block ${arg})`
-          return await evaluate(parser.parse(body), context)
-        }
-      }
-      case '.': {
-        if (rest.length < 2) {
-          return { error: '`.` takes at least 2 arguments' }
-        } else {
-          let container = await evaluate(rest[0], context)
-          const elements = rest.slice(1)
-          for (let i = 0; i < elements.length; i++) {
-            let element = elements[i]
-            if (typeof element === 'symbol') {
-              element = description(element)
-            } else {
-              element = await evaluate(element, context)
-            }
-            container = container[element]
-          }
-          return container
-        }
-      }
-      default: {
-        first = await evoke(first, context)
-        // TODO throw error if first isn't something?
-      }
+    const builtin = builtins[description(first)]
+    if (typeof builtin !== 'undefined') {  // first is a builtin
+      return builtin(context, rest)
+    } else {  // first is a function
+      first = await evoke(first, context)
+      // TODO throw error if first isn't something?
     }
-  } else if (Array.isArray(first)) {
-    first = await evaluate(first, context)  // first arg is a function call
+  } else if (Array.isArray(first)) {  // first is a list; evaluate it before moving on
+    first = await evaluate(first, context)
   }
 
   switch (typeof first) {
