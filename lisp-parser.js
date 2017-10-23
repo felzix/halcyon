@@ -5,7 +5,7 @@ import $ from 'jquery'
 import { generate } from 'pegjs'
 import React from 'react'
 
-import { Editor } from './results'
+import { Editor, uploadConfig } from './results'
 import node from './node'
 
 
@@ -335,6 +335,9 @@ export const defaultContext = {
       const props = null  // TODO args[1]
       const children = args.slice(1)  // TODO args.slice(2)
       return React.createElement(tag, props, children)
+    },
+    config: (...args) => {
+      return uploadConfig()
     },
     node: async (...args) => {
       if (args.length !== 1) {
