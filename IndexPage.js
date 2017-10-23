@@ -610,6 +610,7 @@ function interpretCommand(command, lispInterpreter) {
 
 async function interpretLisp(command, lispInterpreter) {
   const result = await lispInterpreter(command)
+  console.log(result)
   if (typeof result.$$typeof === 'symbol') {  // probably a React element
     return result
   } else if (typeof result.error !== 'undefined') {  // error

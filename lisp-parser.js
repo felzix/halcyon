@@ -378,6 +378,14 @@ export const defaultContext = {
         return mapping
       }
     },
+    http: {
+      get: async (url, params) => {
+        return await $.ajax({
+          type: "GET",
+          url: `http://localhost:41815/${url}`
+        })
+      }
+    },
     edit: (...args) => {
       const initialText = args.length === 0 ? '' : args[0]
       return React.createElement(Editor,

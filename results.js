@@ -10,7 +10,9 @@ export function text(thing, color) {
   let style = {}
   if (typeof color !== 'undefined') style.color = color
 
-  if (typeof thing === 'object') {
+  if (typeof thing.nodeName !== 'undefined') {  // it's a DOM element
+    thing = new XMLSerializer().serializeToString(thing)  // TODO something more clever than string
+  } else if (typeof thing === 'object') {  // some other object
     try {
       thing = JSON.stringify(thing)
     } catch (err) {
