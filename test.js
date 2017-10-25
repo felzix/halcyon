@@ -13,7 +13,6 @@ import { sha256, setNode, getNode, decodeNodeURI, decodeNodeURN, encodeFullNodeU
 
 async function testParse(t, string, expectedTree, expectedResult) {
   const tree = parse(string)
-  console.log(tree)
   t.deepEqual(tree, expectedTree)
   t.deepEqual(await evaluate(tree, defaultContext), expectedResult)
 }

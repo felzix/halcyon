@@ -84,14 +84,14 @@ export function parse(string) {
   return parser.parse(string)
 }
 
-async function evoke(symbol, context) {
+function evoke(symbol, context) {
   const parent = context.parent
   const definitions = context.definitions
   const meaning = definitions[description(symbol)]
   if (typeof meaning !== 'undefined') {
     return meaning
   } else if (typeof parent !== 'undefined') {
-    return await evoke(symbol, parent)
+    return evoke(symbol, parent)
   } else if (typeof symbol === 'string') {
     return symbol
   } else if (typeof symbol === 'number') {
@@ -326,19 +326,30 @@ export const defaultContext = {
     '*': makeArithmetic('*', args => { return args.reduce((x, y) => { return x * y }) }),
     '/': makeArithmetic('/', args => { return 1 / args[0] },
                              args => { return args.reduce((x, y) => { return x / y }) }),
+    mapping: (...args) => {
+     if (args.length !== 1) {
+       return { error: '`mapping` takes exactly 1 argument' }
+     } else {
+       const pairs = args[0]
+       const mapping = {}
+       for (let i = 0; i < pairs.length; i++) {
+         const [key, value] = pairs[i]
+         mapping[key] = value
+       }
+       return mapping
+     }
+    },
     // awesome stuff
     react: (...args) => {
-      if (args.length < 2) {
-        return { error: '`react` requires at least 2 arguments' }
+      if (args.length == 0) {
+        return { error: '`react` requires at least 1 argument' }
       }
       const tag = args[0]
       const props = null  // TODO args[1]
       const children = args.slice(1)  // TODO args.slice(2)
       return React.createElement(tag, props, children)
     },
-    config: (...args) => {
-      return uploadConfig()
-    },
+    config: (...args) => { return uploadConfig() },
     node: async (...args) => {
       if (args.length !== 1) {
         return { error: '`node` requires exactly 1 argument' }
@@ -368,19 +379,6 @@ export const defaultContext = {
       })
       return datum
     },
-    mapping: (...args) => {
-      if (args.length !== 1) {
-        return { error: '`mapping` takes exactly 1 argument' }
-      } else {
-        const pairs = args[0]
-        const mapping = {}
-        for (let i = 0; i < pairs.length; i++) {
-          const [key, value] = pairs[i]
-          mapping[key] = value
-        }
-        return mapping
-      }
-    },
     http: {
       get: async (url, params) => {
         return await $.ajax({
@@ -401,7 +399,7 @@ export async function evaluate(tree, context) {
   if (typeof context === 'undefined') {
     throw 'Function `evaluate` must be called with a context.'
   } else if (typeof tree !== 'object') {
-    return await evoke(tree, context)
+    return evoke(tree, context)
   } else if (tree.length === 0){
     return []
   }
@@ -413,7 +411,7 @@ export async function evaluate(tree, context) {
     if (typeof builtin !== 'undefined') {  // first is a builtin
       return builtin(context, rest)
     } else {  // first is a function
-      first = await evoke(first, context)
+      first = evoke(first, context)
       // TODO throw error if first isn't something?
     }
   } else if (Array.isArray(first)) {  // first is a list; evaluate it before moving on
@@ -427,8 +425,10 @@ export async function evaluate(tree, context) {
       }
       let result = first(...rest)
       if (result.constructor === Promise) {
+        console.log('promise me')
         result = await result
       }
+      // console.log(result)
       return result
     }
     case 'macro': {
