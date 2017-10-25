@@ -6,6 +6,28 @@ import { setConfig, setNodeMap, setDataMap } from './reducer'
 import { readJsonFile } from './node'
 
 
+class GeneratedElement extends React.Component {
+  constructor(props) {
+    super(props)
+    this.state = {
+      dom: props.dom
+    }
+  }
+
+  setDOM(newDOM) {
+    this.setState({ dom: newDOM })
+  }
+
+  render() {
+    if (this.state.dom) {
+      return this.state.dom
+    } else {
+      return React.createElement("div", null, [])
+    }
+  }
+}
+
+
 export function text(thing, color) {
   let style = {}
   if (typeof color !== 'undefined') style.color = color
@@ -23,11 +45,11 @@ export function text(thing, color) {
     thing = `[Function: ${thing.name}]`
   }
 
-  return (
+  const dom = (
     <pre style={style}>
       {thing}
-    </pre>
-  )
+    </pre>)
+  return React.createElement(GeneratedElement, { dom })
 }
 
 export function uploadConfig() {
@@ -46,11 +68,12 @@ export function uploadConfig() {
     }
     reader.readAsText(file);
   }
-  return (
+  const dom = (
     <div>
       Upload JSON config file.
       <input type="file" id="loadConfigFileInput" onChange={onChange}/>
     </div>)
+  return React.createElement(GeneratedElement, { dom })
 }
 
 export class Editor extends React.Component {
@@ -74,12 +97,13 @@ export class Editor extends React.Component {
   }
 
   render() {
-    return (
+    const dom = (
       <div onKeyPress={this.handleKeyPress}
            onKeyUp={this.handleKeyUp}
            onKeyDown={this.handleKeyDown}>
         <CodeMirror value={this.props.value}
                     options={this.props.options}/>
       </div>)
+    return React.createElement(GeneratedElement, { dom })
   }
 }
