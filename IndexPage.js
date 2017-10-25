@@ -7,7 +7,6 @@ import store from './store'
 import { pushHistory, setHistoricalResult, recordPageHeight, setCliElement } from './reducer'
 import { text, uploadConfig } from './results'
 import { HELPTEXT } from './constants'
-import { makeInterpreter } from './lisp-parser'
 
 
 const nodes = {
@@ -91,6 +90,10 @@ class App extends React.Component {
 }
 
 class History extends React.Component {
+  constructor(props) {
+    super(props)
+    this.props.lispInterpreter.addToContext("history", this)
+  }
   componentDidUpdate() {
     this.container.scrollTop = this.container.scrollHeight
   }
@@ -555,7 +558,8 @@ History = connect(
   state => {
     return {
       history: state.history,
-      pageHeight: state.pageHeight
+      pageHeight: state.pageHeight,
+      lispInterpreter: state.lispInterpreter
     }
   },
   dispatch => {
@@ -609,8 +613,7 @@ function interpretCommand(command, lispInterpreter) {
 }
 
 async function interpretLisp(command, lispInterpreter) {
-  const result = await lispInterpreter(command)
-  console.log(result)
+  const result = await lispInterpreter.eval(command)
   if (typeof result.$$typeof === 'symbol') {  // probably a React element
     return result
   } else if (typeof result.error !== 'undefined') {  // error

@@ -5,14 +5,14 @@ import $ from 'jquery'
 import { generate } from 'pegjs'
 import React from 'react'
 
-import { Editor, uploadConfig } from './results'
+import { GeneratedElement, Editor, uploadConfig } from './results'
 import node from './node'
 
 
 const grammar = `
 {
   function log(thing) {
-    console.log(thing)
+    f(thing)
   }
 }
 
@@ -347,7 +347,9 @@ export const defaultContext = {
       const tag = args[0]
       const props = null  // TODO args[1]
       const children = args.slice(1)  // TODO args.slice(2)
-      return React.createElement(tag, props, children)
+      const dom = React.createElement(tag, props, children)
+      return React.createElement(GeneratedElement, { dom })
+
     },
     config: (...args) => { return uploadConfig() },
     node: async (...args) => {
@@ -425,10 +427,8 @@ export async function evaluate(tree, context) {
       }
       let result = first(...rest)
       if (result.constructor === Promise) {
-        console.log('promise me')
         result = await result
       }
-      // console.log(result)
       return result
     }
     case 'macro': {
@@ -442,10 +442,18 @@ export async function evaluate(tree, context) {
 }
 
 export function makeInterpreter() {
-  const globalContext = Object.assign({}, defaultContext)
-  return async input => {
-    return await evaluate(parse(input), globalContext)
+  const interpreter = function() {
+    this.globalContext = Object.assign({}, defaultContext)
   }
+  interpreter.prototype = {
+    addToContext: function(nameOfThing, thing) {
+      this.globalContext.definitions[nameOfThing] = thing
+    },
+    eval: async function(input) {
+      return await evaluate(parse(input), this.globalContext)
+    }
+  }
+  return new interpreter
 }
 
 export default async function (string) {

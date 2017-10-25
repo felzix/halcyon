@@ -1,12 +1,13 @@
 import React from 'react'
 import CodeMirror from 'react-codemirror'
+import CircularJSON from 'circular-json'
 
 import store from './store'
 import { setConfig, setNodeMap, setDataMap } from './reducer'
 import { readJsonFile } from './node'
 
 
-class GeneratedElement extends React.Component {
+export class GeneratedElement extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
@@ -36,7 +37,7 @@ export function text(thing, color) {
     thing = new XMLSerializer().serializeToString(thing)  // TODO something more clever than string
   } else if (typeof thing === 'object') {  // some other object
     try {
-      thing = JSON.stringify(thing)
+      thing = CircularJSON.stringify(thing)
     } catch (err) {
       thing = 'ERROR: object cannot be serialized'
       style.color = 'red'
