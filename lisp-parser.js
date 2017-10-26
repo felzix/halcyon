@@ -73,7 +73,7 @@ quoted
   / '\\\\"' { return '"' }
   / '\\\\'
 
-symbolic = [a-zA-Z!+*/-]
+symbolic = [a-zA-Z!?><=+*/-]
 _ = [ \\t\\n]*
 `
 const parser = generate(grammar)
@@ -156,6 +156,20 @@ function description(symbol) {
 }
 
 const builtins = {
+  'if': async (context, rest) => {
+    if (rest.length < 2 || rest.length > 3) {
+      return { error: '`if` must have 2 or 3 arguments'}
+    }
+    let condition = rest[0]
+    let then = rest[1]
+    let else_ = rest[2]
+    condition = await evaluate(condition, context)
+    if (condition) {
+      return await evaluate(then, context)
+    } else if (typeof else_ !== 'undefined') {
+      return await evaluate(else_, context)
+    }
+  },
   quote: (context, rest) => {
     if (rest.length !== 1) {
       return { error: '`quote` must have exactly 1 argument' }
@@ -326,6 +340,56 @@ export const defaultContext = {
     '*': makeArithmetic('*', args => { return args.reduce((x, y) => { return x * y }) }),
     '/': makeArithmetic('/', args => { return 1 / args[0] },
                              args => { return args.reduce((x, y) => { return x / y }) }),
+    // TODO make comparisons accept many inputs. true if chaining is 100% correct
+    // ex: (> 5 3 1) -> true ; (> 5 1 3) -> false
+    '>': (...args) => {
+      if (args.length !== 2) {
+        return { error: '`>` must have exactly 2 arguments'}
+      }
+      const left = args[0]
+      const right = args[1]
+      return left > right
+    },
+    '<': (...args) => {
+      if (args.length !== 2) {
+        return { error: '`<` must have exactly 2 arguments'}
+      }
+      const left = args[0]
+      const right = args[1]
+      return left < right
+    },
+    '>=': (...args) => {
+      if (args.length !== 2) {
+        return { error: '`>=` must have exactly 2 arguments'}
+      }
+      const left = args[0]
+      const right = args[1]
+      return left >= right
+    },
+    '<=': (...args) => {
+      if (args.length !== 2) {
+        return { error: '`<=` must have exactly 2 arguments'}
+      }
+      const left = args[0]
+      const right = args[1]
+      return left <= right
+    },
+    '==': (...args) => {
+      if (args.length !== 2) {
+        return { error: '`==` must have exactly 2 arguments'}
+      }
+      const left = args[0]
+      const right = args[1]
+      return left === right
+    },
+    '!=': (...args) => {
+      if (args.length !== 2) {
+        return { error: '`!=` must have exactly 2 arguments'}
+      }
+      const left = args[0]
+      const right = args[1]
+      return left !== right
+    },
     mapping: (...args) => {
      if (args.length !== 1) {
        return { error: '`mapping` takes exactly 1 argument' }

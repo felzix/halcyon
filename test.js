@@ -118,6 +118,53 @@ test('lisp-parser :: nested', async t => {
   await testParse(t, '(+ (+ 2 7) (+ 7 8))', [add, [add, 2, 7], [add, 7, 8]], (2+7)+(7+8))
 })
 
+test('lisp-parser :: conditionals', async t => {
+  t.is(await parseAndEval(`(== 2 2)`), true)
+  t.is(await parseAndEval(`(== 1 2)`), false)
+  t.is(await parseAndEval(`(== 2 1)`), false)
+
+  t.is(await parseAndEval(`(!= 1 2)`), true)
+  t.is(await parseAndEval(`(!= 2 1)`), true)
+  t.is(await parseAndEval(`(!= 2 2)`), false)
+
+  t.is(await parseAndEval(`(> 2 1)`), true)
+  t.is(await parseAndEval(`(> 1 2)`), false)
+  t.is(await parseAndEval(`(> 2 2)`), false)
+
+  t.is(await parseAndEval(`(< 2 1)`), false)
+  t.is(await parseAndEval(`(< 1 2)`), true)
+  t.is(await parseAndEval(`(< 2 2)`), false)
+
+  t.is(await parseAndEval(`(>= 2 1)`), true)
+  t.is(await parseAndEval(`(>= 1 2)`), false)
+  t.is(await parseAndEval(`(>= 2 2)`), true)
+
+  t.is(await parseAndEval(`(<= 2 1)`), false)
+  t.is(await parseAndEval(`(<= 1 2)`), true)
+  t.is(await parseAndEval(`(<= 2 2)`), true)
+})
+
+test('lisp-parser :: if', async t => {
+  t.is(
+    await parseAndEval(`
+      (if true
+          14
+          15)`),
+      14)
+  t.is(
+    await parseAndEval(`
+      (if false
+          14
+          15)`),
+      15)
+  t.is(
+    await parseAndEval(`
+      (if (> 9 4)
+          14
+          15)`),
+      14)
+})
+
 test('lisp-parser :: quote', async t => {
   await testParse(t, '(quote)', [quote], {error: '`quote` must have exactly 1 argument'})
   await testParse(t, '(quote ())', [quote, []], [])
