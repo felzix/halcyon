@@ -15,6 +15,27 @@ export class GeneratedElement extends React.Component {
     }
   }
 
+  set(k, v) {  // TODO chaining of keys
+    const patch = {}
+    patch[k] = v
+    this.setState(patch)
+  }
+
+  push(k, v) {  // TODO chaining of keys and optional index
+    const patch = {}
+    patch[k] = this.state[k]
+    patch[k].push(v)
+    this.setState(patch)
+  }
+
+  pop(key) {  // TODO chaining of keys and optional index
+    const patch = {}
+    patch[k] = this.state[k]
+    const v = patch[k].pop()
+    this.setState(patch)
+    return v
+  }
+
   setDOM(newDOM) {
     this.setState({ dom: newDOM })
   }
