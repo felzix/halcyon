@@ -92,10 +92,13 @@ class App extends React.Component {
 class History extends React.Component {
   constructor(props) {
     super(props)
-    this.props.lispInterpreter.addToContext("history", this)
+    this.state = { history: props.history }
+    this.props.lispInterpreter.addToContext("history", this.props.history)
   }
+
   componentDidUpdate() {
     this.container.scrollTop = this.container.scrollHeight
+    this.props.lispInterpreter.addToContext("history", this.props.history)
   }
 
   render() {
@@ -105,7 +108,7 @@ class History extends React.Component {
            ref={div => { this.container = div }}>
         <ol>
           {this.props.history.map((item, index) => {
-            return <li key={`history-${index}`}><pre>{item.command}</pre> {item.result}</li>
+            return <li key={`history-${index}`}><pre>{item.command}</pre> {item.vis}</li>
           })}
         </ol>
       </div>)
@@ -121,6 +124,7 @@ class CommandLineInput extends React.Component {
       cursorEnd: 0,
       historyPosition: null
      }
+     this.props.lispInterpreter.addToContext("help", HELPTEXT)
 
     this.handleSubmit = this.handleSubmit.bind(this)
     this.setInputElement = this.setInputElement.bind(this)
@@ -482,11 +486,12 @@ class CommandLineInput extends React.Component {
   async recordCommand(command) {
     const historicalIndex = this.props.history.length
     interpretCommand(command, this.props.lispInterpreter).then(result => {
-      this.props.setHistoricalResult(historicalIndex, result)
+      this.props.setHistoricalResult(historicalIndex, result.result, result.vis)
     }).catch(seriousErr => {
       console.error(seriousErr)
+      const msg = 'ERROR see dev console for details'
       this.props.setHistoricalResult(
-        historicalIndex, text('ERROR see dev console for details', 'red'))
+        historicalIndex, msg, text(msg, 'red'))
     })
     this.props.pushHistory(command)
   }
@@ -575,11 +580,11 @@ CommandLineInput = connect(
   },
   dispatch => {
     return {
-      pushHistory: (command, result) => {
-        dispatch(pushHistory(command, result))
+      pushHistory: (command, result, vis) => {
+        dispatch(pushHistory(command, result, vis))
       },
-      setHistoricalResult: (index, result) => {
-        dispatch(setHistoricalResult(index, result))
+      setHistoricalResult: (index, result, vis) => {
+        dispatch(setHistoricalResult(index, result, vis))
       },
       setCliElement: element => {
         dispatch(setCliElement(element))
@@ -587,47 +592,33 @@ CommandLineInput = connect(
     }
   })(CommandLineInput)
 
-const globalEval = eval  // this magically makes eval's scope global
-
 function interpretCommand(command, lispInterpreter) {
   return new Promise(async resolve => {
-    switch(command) {
-      case "help":
-        resolve(text(HELPTEXT))
-        break
-      case "config":
-        resolve(uploadConfig())
-        break
-      default:
-        try {
-          const language = store.getState().shellLanguage
-          switch(language) {
-            case 'javascript': resolve(interpretJavascript(command)); break
-            case 'lisp': resolve(await interpretLisp(command, lispInterpreter)); break
-          }
-        } catch(err) {
-          resolve(text(err.stack, 'red'))
-        }
-    }
+    resolve(await interpretLisp(command, lispInterpreter))
   })
 }
 
 async function interpretLisp(command, lispInterpreter) {
-  const result = await lispInterpreter.eval(command)
-  if (typeof result === 'undefined') {  // wrap in React element
-    return text(result)
-  } else if (typeof result.$$typeof === 'symbol') {  // probably a React element
-    return result
-  } else if (typeof result.error !== 'undefined') {  // error
-    return text(result.error, 'red')
-  } else {  // wrap in React element
-    return text(result)
+  const mk = (vis) => {
+    return { command, result, vis }  // command and result come from closure
   }
-}
+  let result
+  try {
+    result = await lispInterpreter.eval(command)
+  } catch (err) {
+    result = err.stack
+    return mk(text(result, 'red'))
+  }
 
-function interpretJavascript(command) {
-  const wrappedCommand = `(function() {return ${command}})()`
-  return text(globalEval(wrappedCommand))
+  if (typeof result === 'undefined') {  // wrap in React element
+    return mk(text(result))
+  } else if (typeof result.$$typeof === 'symbol') {  // probably a React element
+    return mk(result)
+  } else if (typeof result.error !== 'undefined') {  // error
+    return mk(text(result.error, 'red'))
+  } else {  // wrap in React element
+    return mk(text(result))
+  }
 }
 
 function node(name) {

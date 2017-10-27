@@ -10,19 +10,21 @@ export const SET_NODE_MAP = 'SET_NODE_MAP'
 export const SET_DATA_MAP = 'SET_DATA_MAP'
 
 
-export const pushHistory = (command, result) => {
+export const pushHistory = (command, result, vis) => {
   return {
     type: PUSH_HISTORY,
     command,
-    result
+    result,
+    vis
   }
 }
 
-export const setHistoricalResult = (index, result) => {
+export const setHistoricalResult = (index, result, vis) => {
   return {
     type: SET_HISTORICAL_RESULT,
     index,
-    result
+    result,
+    vis
   }
 }
 
@@ -70,12 +72,13 @@ export default (state, action) => {
       ...state,
       history: [
         ...state.history,
-        { command: action.command, result: action.result }
+        { command: action.command, result: action.result, vis: action.vis }
       ]
     }
     case SET_HISTORICAL_RESULT:
       const history = [...state.history]
       history[action.index].result = action.result
+      history[action.index].vis = action.vis
       return {
         ...state,
         history: history

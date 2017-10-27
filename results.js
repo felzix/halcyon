@@ -81,7 +81,6 @@ export function uploadConfig() {
     var file = loadConfigFileInput.files[0]
     var reader = new FileReader()
     reader.onload = function() {
-      console.log(reader.result)
       const config = JSON.parse(reader.result)
       store.dispatch(setConfig(config))
       // TODO work around how 'fs' isn't something browsers get to use

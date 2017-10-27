@@ -1,6 +1,4 @@
-export const HELPTEXT = `
-Javascript commands are available. In fact, the interpreter uses global eval.
-A few special commands exist however, including:
-* config
-* help
+export const HELPTEXT = `\
+This is a lisp designed to work within javascript.
+You probably need to configure this terminal so run \`(config)\`
 `
