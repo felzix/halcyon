@@ -121,7 +121,10 @@ function makeArithmetic(symbol, one, many) {
 
 export function buildLambdaString(rest, block) {
   const params = rest[0].map(p => { return description(p) })
-  const locals = params.map(p => { return `[Symbol.for('def'), Symbol.for('${p}'), ${p}]` })
+  const locals = params.map(p => {
+
+    return `[Symbol.for('def'), Symbol.for('${p}'), [Symbol.for('quote'), ${p}]]`
+  })
   const body = toJavascript(rest.slice(1))
   return `
     (async function(${params.join(', ')}) {
@@ -334,6 +337,7 @@ export const defaultContext = {
     },
     append: (...args) => { return [].concat(...args) },
     concat: (...args) => { return ''.concat(...args) },
+    length: (...args) => { return args[0].length },
     '+': makeArithmetic('+', args => { return args.reduce((x, y) => { return x + y }) }),
     '-': makeArithmetic('-', args => { return -args[0] },
                              args => { return args.reduce((x, y) => { return x - y }) }),
@@ -490,7 +494,7 @@ export async function evaluate(tree, context) {
         rest[i] = await evaluate(rest[i], context)
       }
       let result = first(...rest)
-      if (result.constructor === Promise) {
+      if (typeof result !== 'undefined' && result.constructor === Promise) {
         result = await result
       }
       return result

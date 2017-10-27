@@ -163,6 +163,16 @@ test('lisp-parser :: if', async t => {
           14
           15)`),
       14)
+  t.is(
+    await parseAndEval(`
+      (if (> 9 4)
+          90)`),
+      90)
+  t.is(
+    await parseAndEval(`
+      (if (> 4 9)
+          90)`),
+      undefined)
 })
 
 test('lisp-parser :: quote', async t => {
@@ -216,6 +226,12 @@ test('lisp-parser :: append', async t => {
     await parseAndEval(`(append '(12 14) '("friends"))`),
     [12, 14, `friends`]
   )
+})
+
+test('lisp-parser :: length', async t => {
+  t.is(await parseAndEval(
+    `(length (list 8 16))`),
+    2)
 })
 
 test('lisp-parser :: headrest', async t => {
@@ -287,7 +303,7 @@ test('lisp-parser :: util :: buildLambdaString', async t => {
       }
       let body = [
         Symbol.for('block'),
-          [Symbol.for('def'), Symbol.for('x'), x],[Symbol.for('def'), Symbol.for('y'), y]]
+          [Symbol.for('def'), Symbol.for('x'), [Symbol.for('quote'), x]],[Symbol.for('def'), Symbol.for('y'), [Symbol.for('quote'), y]]]
       body = body.concat([[Symbol.for('*'), Symbol.for('x'), Symbol.for('y')]])
       return await evaluate(body, context)
     })`)
@@ -334,6 +350,14 @@ test('lisp-parser :: lambda', async t => {
       [def, x, [lambda, [x], [concat, x, '.']]],
       [x, 'A sentence']],
     'A sentence.')
+  await testParse(t, `
+    (block
+      (def foo (lambda (x) x))
+      (foo (list 2 4 8)))`,
+    [block,
+      [def, foo, [lambda, [x], x]],
+      [foo, [list, 2, 4, 8]]],
+    [2, 4, 8])
 })
 
 test('lisp-parser :: lambda!', async t => {
