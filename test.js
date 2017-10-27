@@ -62,6 +62,7 @@ test('lisp-parser :: symbol', async t => {
 test('lisp-parser :: atom', async t => {
   await testParse(t, '17', 17, 17)
   await testParse(t, '17.19', 17.19, 17.19)
+  await testParse(t, '-9', -9, -9)
   await testParse(t, 'true', true, true)
   await testParse(t, 'false', false, false)
   await testParse(t, '"hello"', 'hello', 'hello')

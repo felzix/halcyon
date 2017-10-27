@@ -56,10 +56,10 @@ symbol
   = symbolic+ (symbolic[0-9])* { return Symbol.for(text()) }
 
 float
-  = [0-9]+ "." [0-9]+ { return parseFloat(text(), 10) }
+  = "-"?[0-9]+ "." [0-9]+ { return parseFloat(text(), 10) }
 
 integer
-  = [0-9]+ { return parseInt(text(), 10) }
+  = "-"?[0-9]+ { return parseInt(text(), 10) }
 
 boolean
   = "true" { return true }
