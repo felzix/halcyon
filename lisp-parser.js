@@ -419,6 +419,12 @@ export const defaultContext = {
       return React.createElement(GeneratedElement, { dom })
 
     },
+    id: (...args) => {
+      if (args.length != 1) {
+        return { error: '`id` requires exactly 1 argument' }
+      }
+      return args[0]
+    },
     config: (...args) => { return uploadConfig() },
     node: async (...args) => {
       if (args.length !== 1) {
