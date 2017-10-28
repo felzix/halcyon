@@ -73,7 +73,7 @@ quoted
   / '\\\\"' { return '"' }
   / '\\\\'
 
-symbolic = [a-zA-Z!?><=+*/-]
+symbolic = [a-zA-Z_$!?><=+*/-]
 _ = [ \\t\\n]*
 `
 const parser = generate(grammar)
@@ -307,6 +307,12 @@ export const defaultContext = {
         return args[0].slice(1)
       }
     },
+    type: (...args) => {
+      if (args.length !== 1) {
+        return { error: '`type` takes exactly 1 argument'}
+      }
+      return typeof args[0]
+    },
     get: (...args) => {
       if (args.length !== 2 && args.length !== 3) {
         return { error: '`get` requires 2 or 3 arguments' }
@@ -406,6 +412,24 @@ export const defaultContext = {
        }
        return mapping
      }
+    },
+    keys: (...args) => {
+     if (args.length !== 1) {
+       return { error: '`keys` takes exactly 1 argument' }
+     }
+     return Object.keys(args[0])
+    },
+    values: (...args) => {
+     if (args.length !== 1) {
+       return { error: '`values` takes exactly 1 argument' }
+     }
+     return Object.values(args[0])
+    },
+    'new': (...args) => {
+      if (args.length === 0) {
+        return { error: '`new` takes at least 1 argument' }
+      }
+      return new args[0](...args.slice(1))
     },
     // awesome stuff
     react: (...args) => {

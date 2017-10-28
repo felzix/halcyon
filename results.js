@@ -13,6 +13,7 @@ export class GeneratedElement extends React.Component {
     this.state = {
       dom: props.dom
     }
+    this.set = this.set.bind(this)
   }
 
   set(k, v) {  // TODO chaining of keys
@@ -44,7 +45,7 @@ export class GeneratedElement extends React.Component {
     if (this.state.dom) {
       return this.state.dom
     } else {
-      return React.createElement("div", null, [])
+      return React.createElement("div")
     }
   }
 }

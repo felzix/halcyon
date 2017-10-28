@@ -1,5 +1,6 @@
 import 'babel-polyfill'  // necessary for await/async to work
 import React from 'react'
+import ReactDOM from 'react-dom'
 import ReactTestUtils from 'react-dom/test-utils'
 import { connect, Provider } from 'react-redux'
 
@@ -94,6 +95,8 @@ class History extends React.Component {
     super(props)
     this.state = { history: props.history }
     this.props.lispInterpreter.addToContext("history", this.props.history)
+    this.props.lispInterpreter.addToContext("ReactDOM", ReactDOM)
+    this.props.lispInterpreter.addToContext("React", React)
   }
 
   componentDidUpdate() {
@@ -616,8 +619,8 @@ async function interpretLisp(command, lispInterpreter) {
     return mk(result)
   } else if (typeof result.error !== 'undefined') {  // error
     return mk(text(result.error, 'red'))
-  } else if (typeof result.vis !== 'undefined') {  // use React element returned by `vis`
-    return mk(await result.vis())
+  } else if (typeof result.vis !== 'undefined') {  // use `vis` React element
+    return mk(await result.vis)
   } else {  // wrap in React element
     return mk(text(result))
   }
