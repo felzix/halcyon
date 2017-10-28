@@ -616,6 +616,8 @@ async function interpretLisp(command, lispInterpreter) {
     return mk(result)
   } else if (typeof result.error !== 'undefined') {  // error
     return mk(text(result.error, 'red'))
+  } else if (typeof result.vis !== 'undefined') {  // use React element returned by `vis`
+    return mk(await result.vis())
   } else {  // wrap in React element
     return mk(text(result))
   }
