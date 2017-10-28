@@ -409,18 +409,23 @@ export const defaultContext = {
     },
     // awesome stuff
     react: (...args) => {
-      if (args.length == 0) {
+      if (args.length === 0) {
         return { error: '`react` requires at least 1 argument' }
       }
       const tag = args[0]
       const props = null  // TODO args[1]
       const children = args.slice(1)  // TODO args.slice(2)
-      const dom = React.createElement(tag, props, children)
+      return React.createElement(tag, props, ...children)
+    },
+    'vis': (...args) => {
+      if (args.length !== 1) {
+        return { error: '`vis` requires at exactly 1 argument' }
+      }
+      const dom = args[0]
       return React.createElement(GeneratedElement, { dom })
-
     },
     id: (...args) => {
-      if (args.length != 1) {
+      if (args.length !== 1) {
         return { error: '`id` requires exactly 1 argument' }
       }
       return args[0]
