@@ -73,7 +73,7 @@ quoted
   / '\\\\"' { return '"' }
   / '\\\\'
 
-symbolic = [a-zA-Z_$!?><=+*/-]
+symbolic = [a-zA-Z:;_$!?><=+*/-]
 _ = [ \\t\\n]*
 `
 const parser = generate(grammar)
@@ -122,7 +122,6 @@ function makeArithmetic(symbol, one, many) {
 export function buildLambdaString(rest, block) {
   const params = rest[0].map(p => { return description(p) })
   const locals = params.map(p => {
-
     return `[Symbol.for('def'), Symbol.for('${p}'), [Symbol.for('quote'), ${p}]]`
   })
   const body = toJavascript(rest.slice(1))
@@ -250,18 +249,20 @@ const builtins = {
     }
   },
   load: async (context, rest) => {
-    if (rest.length !== 1) {
-      return { error: '`load` takes exactly 1 argument' }
+    if (rest.length !== 1 && rest.length !== 2) {
+      return { error: '`load` takes 1 or 2 arguments' }
     } else {
-      const definitions = await evaluate(rest[0], context)
-      const newOlderSister = Object.assign({}, context)
-      newOlderSister.child = context
-      context.parent = newOlderSister
+      const defMapping = rest[0]
+      const targetContext = typeof rest[1] === 'undefined' ? context : await evaluate(rest[1], context)
+      const definitions = await evaluate(defMapping, context)
+      const newOlderSister = Object.assign({}, targetContext)
+      newOlderSister.child = targetContext
+      targetContext.parent = newOlderSister
       if (typeof newOlderSister.parent !== 'undefined') {
         newOlderSister.parent.child = newOlderSister
       }
-      context.definitions = definitions
-      return context  // yes, actually returns context to user; TODO read-only
+      targetContext.definitions = definitions
+      return targetContext  // yes, actually returns context to user; TODO read-only
     }
   },
   unload: async (context, rest) => {
@@ -544,10 +545,11 @@ export async function evaluate(tree, context) {
   }
 }
 
-export function makeInterpreter() {
+export function makeInterpreter(globalContext) {
   const interpreter = function() {
-    this.globalContext = Object.assign({}, defaultContext)
+    this.globalContext = Object.assign({}, globalContext)
   }
+
   interpreter.prototype = {
     addToContext: function(nameOfThing, thing) {
       this.globalContext.definitions[nameOfThing] = thing
@@ -556,7 +558,7 @@ export function makeInterpreter() {
       return await evaluate(parse(input), this.globalContext)
     }
   }
-  return new interpreter
+  return new interpreter()
 }
 
 export default async function (string) {

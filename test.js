@@ -413,7 +413,7 @@ test('lisp-parser :: lambda as first argument', async t => {
 })
 
 test('lisp-parser :: interpreter', async t => {
-  const interpreter = makeInterpreter()
+  const interpreter = makeInterpreter(defaultContext)
   t.is(await interpreter.eval('1'), 1)
   t.is(await interpreter.eval('(quote 7)'), 7)
   t.deepEqual(await interpreter.eval('(list 6 7)'), [6, 7])
@@ -422,7 +422,7 @@ test('lisp-parser :: interpreter', async t => {
 })
 
 test('lisp-parser :: eval', async t => {
-  const interpreter = makeInterpreter()
+  const interpreter = makeInterpreter(defaultContext)
   const toImport = `
   (def x 7)
   (def foo (lambda (y) (+ x y)))

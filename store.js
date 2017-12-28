@@ -1,12 +1,11 @@
 import { createStore } from 'redux'
 
-import { makeInterpreter } from './lisp-parser'
+import { makeInterpreter, defaultContext } from './lisp-parser'
 import reducer from './reducer'
-
 
 const defaultState = {
   shellLanguage: 'lisp',
-  lispInterpreter: makeInterpreter(),
+  lispInterpreter: makeInterpreter(defaultContext),
   cliElement: null,
   history: [],
   pageHeight: 600,  // necessary for redrawing on window resize
