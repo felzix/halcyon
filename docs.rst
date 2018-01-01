@@ -8,7 +8,7 @@ lambda params statement... -> function
 lambda! params statement... -> function
 eval string -> anything
 . container index -> value
-load definitions -> context
+load definitions [context] -> context
 unload context -> undefined
 
 list thing... -> [thing...]

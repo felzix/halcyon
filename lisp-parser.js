@@ -4,6 +4,7 @@ import 'babel-polyfill'  // necessary for await/async to work
 import $ from 'jquery'
 import { generate } from 'pegjs'
 import React from 'react'
+import uuid4 from 'uuid'
 
 import { GeneratedElement, Editor, uploadConfig } from './results'
 import node from './node'
@@ -190,7 +191,7 @@ const builtins = {
     }
   },
   block: async (context, rest) => {
-    const blockContext = { parent: context, definitions: {} }
+    const blockContext = { uid: uuid4(), parent: context, definitions: {} }
     context.child = blockContext  // probably not useful *here* but is consistent with `load`
     let finalValue
     for (let i = 0; i < rest.length; i++) {
@@ -253,14 +254,20 @@ const builtins = {
       return { error: '`load` takes 1 or 2 arguments' }
     } else {
       const defMapping = rest[0]
-      const targetContext = typeof rest[1] === 'undefined' ? context : await evaluate(rest[1], context)
+      const targetContext = typeof rest[1] === 'undefined'
+        ? context : await evaluate(rest[1], context)
       const definitions = await evaluate(defMapping, context)
-      const newOlderSister = Object.assign({}, targetContext)
-      newOlderSister.child = targetContext
-      targetContext.parent = newOlderSister
-      if (typeof newOlderSister.parent !== 'undefined') {
+      // const newOlderSister = Object.assign({}, targetContext)
+      const newOlderSister = {
+        uid: uuid4(),
+        child: targetContext,
+        definitions: targetContext.definitions
+      }
+      if (typeof targetContext.parent !== 'undefined') {
+        newOlderSister.parent = targetContext.parent
         newOlderSister.parent.child = newOlderSister
       }
+      targetContext.parent = newOlderSister
       targetContext.definitions = definitions
       return targetContext  // yes, actually returns context to user; TODO read-only
     }
@@ -285,6 +292,7 @@ const builtins = {
 }
 
 export const defaultContext = {
+  uid: "default",
   parent: undefined,  // written here for later clarity
   child: undefined,  // written here for later clarity
   definitions: {
@@ -449,6 +457,20 @@ export const defaultContext = {
       const dom = args[0]
       return React.createElement(GeneratedElement, { dom })
     },
+    serialize: (...args) => {
+      if (args.length !== 1) {
+        return { error: '`serialize` requires exactly 1 argument' }
+      }
+      const thing = args[0]
+      return JSON.stringify(thing)
+    },
+    unserialize: (...args) => {
+      if (args.length !== 1) {
+        return { error: '`unserialize` requires exactly 1 argument' }
+      }
+      const string = args[0]
+      return JSON.parse(string)
+    },
     id: (...args) => {
       if (args.length !== 1) {
         return { error: '`id` requires exactly 1 argument' }
@@ -555,10 +577,13 @@ export function makeInterpreter(globalContext) {
       this.globalContext.definitions[nameOfThing] = thing
     },
     eval: async function(input) {
+      console.log(this.globalContext)
       return await evaluate(parse(input), this.globalContext)
     }
   }
-  return new interpreter()
+  const inst = new interpreter()
+  inst.addToContext("global", globalContext)
+  return inst
 }
 
 export default async function (string) {
