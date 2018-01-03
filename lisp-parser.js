@@ -191,12 +191,17 @@ const builtins = {
     }
   },
   block: async (context, rest) => {
-    const blockContext = { uid: uuid4(), parent: context, definitions: {} }
-    context.child = blockContext  // probably not useful *here* but is consistent with `load`
+    const blockContext = { uid: `block-${uuid4()}`, parent: context, definitions: {} }
+
+    // probably not useful *here* but is consistent with `load`
+    const originalChild = context.child
+    context.child = blockContext
+
     let finalValue
     for (let i = 0; i < rest.length; i++) {
       finalValue = await evaluate(rest[i], blockContext)
     }
+    context.child = originalChild
     return finalValue
   },
   'block!': async (context, rest) => {  // syntactic necessity
@@ -257,9 +262,8 @@ const builtins = {
       const targetContext = typeof rest[1] === 'undefined'
         ? context : await evaluate(rest[1], context)
       const definitions = await evaluate(defMapping, context)
-      // const newOlderSister = Object.assign({}, targetContext)
       const newOlderSister = {
-        uid: uuid4(),
+        uid: `sister-${uuid4()}`,
         child: targetContext,
         definitions: targetContext.definitions
       }
@@ -269,6 +273,7 @@ const builtins = {
       }
       targetContext.parent = newOlderSister
       targetContext.definitions = definitions
+
       return targetContext  // yes, actually returns context to user; TODO read-only
     }
   },
@@ -568,8 +573,9 @@ export async function evaluate(tree, context) {
 }
 
 export function makeInterpreter(globalContext) {
+  globalContext = copyContext(globalContext)
   const interpreter = function() {
-    this.globalContext = Object.assign({}, globalContext)
+    this.globalContext = globalContext
   }
 
   interpreter.prototype = {
@@ -577,18 +583,25 @@ export function makeInterpreter(globalContext) {
       this.globalContext.definitions[nameOfThing] = thing
     },
     eval: async function(input) {
-      console.log(this.globalContext)
       return await evaluate(parse(input), this.globalContext)
     }
   }
   const inst = new interpreter()
-  inst.addToContext("global", globalContext)
+  inst.addToContext('global', globalContext)
   return inst
 }
 
-export default async function (string) {
+export default async function(string) {
   const tree = parse(string)
   if (typeof tree !== 'undefined') {
-    return await evaluate(tree, Object.assign({}, defaultContext))
+    const context = copyContext(defaultContext)
+    context.definitions['global'] = context
+    return await evaluate(tree, context)
   }
+}
+
+function copyContext(context) {
+  const newContext = Object.assign({ definitions: {} }, context)
+  newContext.definitions = Object.assign({}, newContext.definitions)
+  return newContext
 }

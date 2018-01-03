@@ -310,6 +310,14 @@ test('lisp-parser :: util :: buildLambdaString', async t => {
     })`)
 })
 
+test('lisp-parser :: global', async t => {
+  t.truthy(await parseAndEval(`global`))
+  t.is(await parseAndEval(`global.uid`), 'default')
+  console.log(await parseAndEval('global'))
+  t.falsy(await parseAndEval(`global.parent`))
+
+})
+
 test('lisp-parser :: load-unload', async t => {
   t.is(await parseAndEval(`
     (block
@@ -324,6 +332,16 @@ test('lisp-parser :: load-unload', async t => {
       (unload callow)
       foo)`),
     12)
+})
+
+test('lisp-parser :: load global', async t => {
+  const interpreter = makeInterpreter(defaultContext)
+  await interpreter.eval(`
+    (block
+      (load {"p": 20} global)
+    )`)
+  t.is(await interpreter.eval(`p`),
+       20)
 })
 
 test('lisp-parser :: lambda', async t => {
@@ -423,12 +441,12 @@ test('lisp-parser :: interpreter', async t => {
 
 test('lisp-parser :: eval', async t => {
   const interpreter = makeInterpreter(defaultContext)
-  const toImport = `
+  const sourcecode = `
   (def x 7)
   (def foo (lambda (y) (+ x y)))
   foo`
   t.is(await interpreter.eval(`
-    ((eval "${toImport}") 17)`),
+    ((eval "${sourcecode}") 17)`),
     24)
 })
 
