@@ -232,7 +232,7 @@ const builtins = {
       return { error: '`eval` must have exactly 1 argument' }
     } else {
       const arg = await evaluate(rest[0], context)
-      const body = `(block ${arg})`
+      const body = `(block! ${arg})`
       return await evaluate(parser.parse(body), context)
     }
   },

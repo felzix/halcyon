@@ -10,7 +10,9 @@ const defaultState = {
   cliElement: null,
   history: [],
   pageHeight: 600,  // necessary for redrawing on window resize
-  config: {},
+  config: {
+    startupScript: 'robert+startup-script:unversioned'  // TODO do not hardcode
+  },
   nodeMap: {},
   dataMap: {}
 }

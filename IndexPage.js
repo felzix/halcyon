@@ -30,11 +30,18 @@ export default class IndexPage extends React.Component {
 }
 
 class App extends React.Component {
-  componentDidMount() {
+  async componentDidMount() {
     window.addEventListener("resize", this.handleResize.bind(this))
     this.handleKeyboard = this.handleKeyboard.bind(this)
     this.handleKeyDown = this.handleKeyDown.bind(this)
     this.handleKeyUp = this.handleKeyUp.bind(this)
+
+    // If there is a startup script then execute it now.
+    if (typeof this.props.config.startupScript === 'string') {
+      await this.props.lispInterpreter.eval(`
+        (eval (node "${this.props.config.startupScript}"))
+      `)
+    }
   }
 
   handleResize() {
@@ -126,8 +133,8 @@ class CommandLineInput extends React.Component {
       cursorStart: 0,
       cursorEnd: 0,
       historyPosition: null
-     }
-     this.props.lispInterpreter.addToContext("help", HELPTEXT)
+    }
+    this.props.lispInterpreter.addToContext("help", HELPTEXT)
 
     this.handleSubmit = this.handleSubmit.bind(this)
     this.setInputElement = this.setInputElement.bind(this)
@@ -544,8 +551,10 @@ class Topbar extends React.Component {
 App = connect(
   state => {
     return {
+      config: state.config,
       history: state.history,
-      cliElement: state.cliElement
+      cliElement: state.cliElement,
+      lispInterpreter: state.lispInterpreter
     }
   },
   dispatch => {
