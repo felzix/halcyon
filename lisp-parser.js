@@ -5,11 +5,13 @@ import $ from 'jquery'
 import { generate } from 'pegjs'
 import React from 'react'
 import uuid4 from 'uuid'
+import CodeMirror from 'react-codemirror'  // TODO refactor away
 
 import { GeneratedElement, Editor, uploadConfig } from './results'
 import node from './node'
 
 
+// TODO ignore commas in mappings
 const grammar = `
 {
   function log(thing) {
@@ -191,7 +193,12 @@ const builtins = {
     }
   },
   block: async (context, rest) => {
-    const blockContext = { uid: `block-${uuid4()}`, parent: context, definitions: {} }
+    const blockContext = {
+      uid: `block-${uuid4()}`,
+      parent: context,
+      definitions: {}
+    }
+    blockContext.definitions.this = blockContext
 
     // probably not useful *here* but is consistent with `load`
     const originalChild = context.child
@@ -451,8 +458,8 @@ export const defaultContext = {
         return { error: '`react` requires at least 1 argument' }
       }
       const tag = args[0]
-      const props = null  // TODO args[1]
-      const children = args.slice(1)  // TODO args.slice(2)
+      const props = args[1]
+      const children = args.slice(2)
       return React.createElement(tag, props, ...children)
     },
     'vis': (...args) => {
@@ -524,7 +531,12 @@ export const defaultContext = {
       const initialText = args.length === 0 ? '' : args[0]
       return React.createElement(Editor,
         { value: initialText, options: { lineNumbers: true } })
-    }
+    },
+    log: (...args) => {
+      console.log(...args)
+    },
+    Editor: Editor,  // TODO this feels wrong,
+    CodeMirror: CodeMirror  // TODO should not be!
   }
 }
 

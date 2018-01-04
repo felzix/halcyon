@@ -1,5 +1,6 @@
 import React from 'react'
 import CodeMirror from 'react-codemirror'
+import ParinferCodeMirror from 'parinfer-codemirror'
 import CircularJSON from 'circular-json'
 
 import store from './store'
@@ -106,6 +107,8 @@ export class Editor extends React.Component {
     this.handleKeyPress = this.handleKeyPress.bind(this)
     this.handleKeyUp = this.handleKeyUp.bind(this)
     this.handleKeyDown = this.handleKeyDown.bind(this)
+    this.setMode = this.setMode.bind(this)
+    this.getText = this.getText.bind(this)
   }
 
   handleKeyPress(event) {
@@ -120,13 +123,28 @@ export class Editor extends React.Component {
     event.stopPropagation()
   }
 
+  setMode(newMode) {
+    ParinferCodeMirror.setMode(this.codeMirror.codeMirror, newMode)
+  }
+
+  getText() {
+    return this.codeMirror.codeMirror.doc.getValue()
+  }
+
+  componentDidMount() {
+    if (this.codeMirror !== null) {
+      ParinferCodeMirror.init(this.codeMirror.codeMirror)
+    }
+  }
+
   render() {
     const dom = (
       <div onKeyPress={this.handleKeyPress}
            onKeyUp={this.handleKeyUp}
            onKeyDown={this.handleKeyDown}>
         <CodeMirror value={this.props.value}
-                    options={this.props.options}/>
+                    options={this.props.options}
+                    ref={cm => { this.codeMirror = cm }}/>
       </div>)
     return React.createElement(GeneratedElement, { dom })
   }
