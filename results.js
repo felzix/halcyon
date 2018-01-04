@@ -1,6 +1,9 @@
 import React from 'react'
+require('codemirror/addon/edit/matchbrackets')
+require('codemirror/addon/display/fullscreen')
 import CodeMirror from 'react-codemirror'
 import ParinferCodeMirror from 'parinfer-codemirror'
+
 import CircularJSON from 'circular-json'
 
 import store from './store'
@@ -109,6 +112,9 @@ export class Editor extends React.Component {
     this.handleKeyDown = this.handleKeyDown.bind(this)
     this.setMode = this.setMode.bind(this)
     this.getText = this.getText.bind(this)
+    this.setSize = this.setSize.bind(this)
+    this.getOption = this.getOption.bind(this)
+    this.setOption = this.setOption.bind(this)
   }
 
   handleKeyPress(event) {
@@ -129,6 +135,18 @@ export class Editor extends React.Component {
 
   getText() {
     return this.codeMirror.codeMirror.doc.getValue()
+  }
+
+  setSize(width, height) {
+    return this.codeMirror.codeMirror.setSize(width, height)
+  }
+
+  getOption(option) {
+    return this.codeMirror.codeMirror.getOption(option)
+  }
+
+  setOption(option, value) {
+    this.codeMirror.codeMirror.setOption(option, value)
   }
 
   componentDidMount() {

@@ -12,6 +12,8 @@ import node from './node'
 
 
 // TODO ignore commas in mappings
+// TODO mapping value (and maybe key?) cannot have a number in a symbol but should be allowed to
+//      ex: {"Cmd-S": save2}
 const grammar = `
 {
   function log(thing) {
@@ -289,6 +291,7 @@ const builtins = {
       return { error: '`unload` takes exactly 1 argument' }
     } else {
       const contextToUnload = await evaluate(rest[0], context)
+      console.log("unload", contextToUnload)
       if (contextToUnload.parent) {
         contextToUnload.parent.child = contextToUnload.child
       }
@@ -371,6 +374,7 @@ export const defaultContext = {
     '*': makeArithmetic('*', args => { return args.reduce((x, y) => { return x * y }) }),
     '/': makeArithmetic('/', args => { return 1 / args[0] },
                              args => { return args.reduce((x, y) => { return x / y }) }),
+    'not': (...args) => { return ! args[0] },
     // TODO make comparisons accept many inputs. true if chaining is 100% correct
     // ex: (> 5 3 1) -> true ; (> 5 1 3) -> false
     '>': (...args) => {
@@ -510,14 +514,18 @@ export const defaultContext = {
       const urn = args[0]
       const data = args[1]
       const { owner, name, version } = node.decodeNodeURN(urn, 'robert', 'unversioned')
-      const datum = await $.ajax({
-        type: "PUT",
-        url: `http://localhost:41814/${owner}/${name}/${version}`,
-        dataType: "text/plain",
-        contentType: "text/plain",
-        data
-      })
-      return datum
+      try {
+        const datum = await $.ajax({
+          type: "PUT",
+          url: `http://localhost:41814/${owner}/${name}/${version}`,
+          dataType: "text/plain",
+          contentType: "text/plain",
+          data
+        })
+        return datum
+      } catch (err) {
+        console.log(err)
+      }
     },
     http: {
       get: async (url, params) => {

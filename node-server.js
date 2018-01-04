@@ -25,6 +25,7 @@ app.get('/:owner/:name/:version', (request, response) => {
   if (typeof datum === 'undefined') {
     response.status(404).send()
   } else {
+    console.log(`GET /${owner}/${name}/${version}`)
     response.send(datum)
   }
 })
@@ -37,7 +38,8 @@ app.put('/:owner/:name/:version', (request, response) => {
   node.setNode(nodeMap, dataMap, owner, name, version, datum)
   node.writeJsonFile('nodes.json', nodeMap)
   node.writeJsonFile('data.json', dataMap)
-  response.send()
+  console.log(`PUT /${owner}/${name}/${version}`)
+  response.status(204).send()
 })
 
 app.listen(41814, () => {
