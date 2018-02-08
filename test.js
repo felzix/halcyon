@@ -451,11 +451,11 @@ test('lisp-parser :: eval', async t => {
 })
 
 test('lisp-parser :: html', async t => {
-  let div = await parseAndEval(`(react "div" "stuff and stuff")`)
+  let div = await parseAndEval(`(react "div" undefined "stuff and stuff")`)
   t.is(ReactDOMServer.renderToStaticMarkup(div),
     '<div>stuff and stuff</div>')
 
-  div = await parseAndEval(`(react "div" "stuff and <br/> stuff")`)
+  div = await parseAndEval(`(react "div" undefined "stuff and <br/> stuff")`)
   t.is(ReactDOMServer.renderToStaticMarkup(div),
     '<div>stuff and &lt;br/&gt; stuff</div>')
 })

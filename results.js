@@ -1,6 +1,8 @@
 import React from 'react'
-require('codemirror/addon/edit/matchbrackets')
-require('codemirror/addon/display/fullscreen')
+if (typeof window !== 'undefined') {  // don't load codemirror addons in nodejs
+  require('codemirror/addon/edit/matchbrackets')
+  require('codemirror/addon/display/fullscreen')
+}
 import CodeMirror from 'react-codemirror'
 import ParinferCodeMirror from 'parinfer-codemirror'
 

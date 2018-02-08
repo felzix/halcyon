@@ -27,6 +27,12 @@ For development, also run this command:
 
     ./node_modules/.bin/webpack --watch
 
+Testing
+-------
+To run the tests:
+
+    ava
+
 TODO
 ====
 
