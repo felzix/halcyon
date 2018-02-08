@@ -38,6 +38,7 @@ vis React.Element -> GeneratedElement
 id thing -> thing
 config -> React.Element
 node urn -> string
+nodes [owner [name]] -> [string]
 save urn string -> string
 http.get url params -> string
 edit [string] -> React.Element
