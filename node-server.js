@@ -17,10 +17,56 @@ app.use(function(request, response, next) {
   next()
 })
 
+// Lists all owners
+app.get('/', (request, response) => {
+  const nodeMap = node.readJsonFile('nodes.json')
+  const dataMap = node.readJsonFile('data.json')
+
+  const keys = node.listNodes(nodeMap, dataMap)
+  if (keys.length === 0) {
+    response.status(404).send()
+  } else {
+    console.log(`GET /`)
+    response.send({ nodes: keys })
+  }
+})
+
+// Lists all names
+app.get('/:owner', (request, response) => {
+  const { owner } = request.params
+  const nodeMap = node.readJsonFile('nodes.json')
+  const dataMap = node.readJsonFile('data.json')
+
+  const keys = node.listNodes(nodeMap, dataMap, owner)
+  if (keys.length === 0) {
+    response.status(404).send()
+  } else {
+    console.log(`GET /${owner}`)
+    response.send({ nodes: keys })
+  }
+})
+
+// Lists all versions
+app.get('/:owner/:name', (request, response) => {
+  const { owner, name } = request.params
+  const nodeMap = node.readJsonFile('nodes.json')
+  const dataMap = node.readJsonFile('data.json')
+
+  const keys = node.listNodes(nodeMap, dataMap, owner, name)
+  if (keys.length === 0) {
+    response.status(404).send()
+  } else {
+    console.log(`GET /${owner}/${name}`)
+    response.send({ nodes: keys })
+  }
+})
+
+// Returns node
 app.get('/:owner/:name/:version', (request, response) => {
   const { owner, name, version } = request.params
   const nodeMap = node.readJsonFile('nodes.json')
   const dataMap = node.readJsonFile('data.json')
+
   const datum = node.getNode(nodeMap, dataMap, owner, name, version)
   if (typeof datum === 'undefined') {
     response.status(404).send()
@@ -35,6 +81,7 @@ app.put('/:owner/:name/:version', (request, response) => {
   const datum = request.body
   const nodeMap = node.readJsonFile('nodes.json')
   const dataMap = node.readJsonFile('data.json')
+
   node.setNode(nodeMap, dataMap, owner, name, version, datum)
   node.writeJsonFile('nodes.json', nodeMap)
   node.writeJsonFile('data.json', dataMap)

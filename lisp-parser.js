@@ -507,6 +507,36 @@ export const defaultContext = {
       })
       return datum
     },
+    nodes: async (...args) => {
+      if (args.length > 2) {
+        return { error: '`nodes` requires 0 to 2 arguments' }
+      }
+
+      const unwrap = wrapper => {
+        return wrapper.nodes
+      }
+
+      switch(args.length) {
+        case 0: {  // list owners
+          return unwrap(await $.ajax({
+            type: "GET",
+            url: `http://localhost:41814/`
+          }))
+        }
+        case 1: {  // list names
+          return unwrap(await $.ajax({
+            type: "GET",
+            url: `http://localhost:41814/${args[0]}`
+          }))
+        }
+        case 2: {  // list versions
+          return unwrap(await $.ajax({
+            type: "GET",
+            url: `http://localhost:41814/${args[0]}/${args[1]}`
+          }))
+        }
+      }
+    },
     save: async (...args) => {
       if (args.length !== 2) {
         return { error: '`save` requires exactly 2 arguments' }

@@ -37,14 +37,33 @@ module.exports.getNode = (nodeMap, dataMap, owner, name, version) => {
   }
 }
 
+module.exports.listNodes = (nodeMap, dataMap, owner, name) => {
+  try {
+    if (typeof owner === 'undefined') {
+      return Object.keys(nodeMap)
+    } else if (typeof name === 'undefined') {
+      return Object.keys(nodeMap[owner])
+    } else {
+      return Object.keys(nodeMap[owner][name])
+    }
+  } catch (err) {
+    if (err instanceof TypeError) {  // no such set of nodes
+      return []
+    } else {
+      throw(err)
+    }
+  }
+}
+
 function getNodeHash(nodeMap, owner, name, version) {
   try {
     return nodeMap[owner][name][version]
   } catch (err) {
     if (err instanceof TypeError) {  // new node!
       return
+    } else {
+      throw(err)
     }
-    throw(err)
   }
 }
 
