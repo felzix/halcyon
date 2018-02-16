@@ -177,6 +177,18 @@ const builtins = {
       return await evaluate(else_, context)
     }
   },
+  'or': async (context, rest) => {
+    // TODO enable support for [0, inf) arguments
+    if (rest.length !== 2) {
+        return { error: '`or` must have exactly 2 argumenst'}
+    }
+    const first = await evaluate(rest[0], context)
+    if (first) {
+        return first
+    }
+    const second = await evaluate(rest[1], context)
+    return second
+  },
   quote: (context, rest) => {
     if (rest.length !== 1) {
       return { error: '`quote` must have exactly 1 argument' }
@@ -501,11 +513,16 @@ export const defaultContext = {
       const urn = args[0]
       // TODO get defaults from config
       const { owner, name, version } = node.decodeNodeURN(urn, 'robert', 'unversioned')
-      const datum = await $.ajax({
-        type: "GET",
-        url: `http://localhost:41814/${owner}/${name}/${version}`
-      })
-      return datum
+      try {
+        const datum = await $.ajax({
+          type: "GET",
+          url: `http://localhost:41814/${owner}/${name}/${version}`
+        })
+        return datum
+    } catch (err) {
+      console.log(err)
+    }
+
     },
     nodes: async (...args) => {
       if (args.length > 2) {
@@ -564,11 +581,6 @@ export const defaultContext = {
           url: `http://localhost:41815/${url}`
         })
       }
-    },
-    edit: (...args) => {
-      const initialText = args.length === 0 ? '' : args[0]
-      return React.createElement(Editor,
-        { value: initialText, options: { lineNumbers: true } })
     },
     log: (...args) => {
       console.log(...args)
