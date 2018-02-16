@@ -58,7 +58,7 @@ shorthandQuote
   = "'" arg:sexpr { return [Symbol.for('quote')].concat([arg]) }
 
 symbol
-  = symbolic+ (symbolic[0-9])* { return Symbol.for(text()) }
+  = symbolic latterSymbolic* { return Symbol.for(text()) }
 
 float
   = "-"?[0-9]+ "." [0-9]+ { return parseFloat(text(), 10) }
@@ -79,6 +79,7 @@ quoted
   / '\\\\'
 
 symbolic = [a-zA-Z:;_$!?><=+*/-]
+latterSymbolic = [0-9a-zA-Z:;_$!?><=+*/-]
 _ = [ \\t\\n]*
 `
 const parser = generate(grammar)
@@ -520,7 +521,7 @@ export const defaultContext = {
         })
         return datum
     } catch (err) {
-      console.log(err)
+      console.log(err)  // TODO handle 404s correctly and escalate the rest
     }
 
     },
@@ -571,7 +572,7 @@ export const defaultContext = {
         })
         return datum
       } catch (err) {
-        console.log(err)
+        console.log(err)  // TODO should escalate instead
       }
     },
     http: {
