@@ -65,6 +65,10 @@ export function text(thing, color) {
 
   if (typeof thing === 'undefined') {  // no value was returned
     thing = 'nil'
+  } else if (thing === null) {
+    thing = 'null'
+  } else if (typeof thing === 'boolean') {
+    thing = JSON.stringify(thing)
   } else if (typeof thing.nodeName !== 'undefined') {  // it's a DOM element
     thing = new XMLSerializer().serializeToString(thing)  // TODO something more clever than string
   } else if (typeof thing === 'object') {  // some other object

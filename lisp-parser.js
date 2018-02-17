@@ -611,6 +611,8 @@ export async function evaluate(tree, context) {
 
   if (typeof tree === 'undefined') {
       return tree  // nil
+  } else if (tree === null) {
+      return tree  // null
   } else if (typeof tree !== 'object') {
     return evoke(tree, context)
   } else if (tree.length === 0){
