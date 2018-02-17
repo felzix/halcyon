@@ -618,9 +618,8 @@ async function interpretLisp(command, lispInterpreter) {
   try {
     result = await lispInterpreter.eval(command)
   } catch (err) {
-    result = err.stack
     console.error(err)
-    return mk(text(result, 'red'))
+    return mk(text(err, 'red'))
   }
 
   if (typeof result === 'undefined') {  // wrap in React element
