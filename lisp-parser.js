@@ -520,10 +520,9 @@ export const defaultContext = {
           url: `http://localhost:41814/${owner}/${name}/${version}`
         })
         return datum
-    } catch (err) {
-      console.log(err)  // TODO handle 404s correctly and escalate the rest
-    }
-
+      } catch (err) {
+        console.log(err)  // TODO handle 404s correctly and escalate the rest
+      }
     },
     nodes: async (...args) => {
       if (args.length > 2) {
@@ -572,7 +571,7 @@ export const defaultContext = {
         })
         return datum
       } catch (err) {
-        console.log(err)  // TODO should escalate instead
+        console.error(err)  // TODO should escalate instead
       }
     },
     http: {
