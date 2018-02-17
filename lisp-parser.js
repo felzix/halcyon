@@ -330,6 +330,29 @@ const builtins = {
       return { error: '`throw` must have exactly 1 argument' }
     }
     throw rest[0]
+  },
+  'try': async (context, rest) => {
+      if (rest.length !== 2) {
+        return { error: '`try` must have exactly 2 arguments' }
+      }
+
+      try {
+          return await evaluate(rest[0], context)
+      } catch (err) {
+          const tryContext = {
+            uid: `try-${uuid4()}`,
+            parent: context,
+            definitions: { err }
+          }
+          tryContext.definitions.this = tryContext
+          // probably not useful *here* but is consistent with `load`
+          const originalChild = context.child
+          context.child = tryContext
+
+          const value = await evaluate(rest[1], tryContext)
+          context.child = originalChild
+          return value
+      }
   }
 }
 
