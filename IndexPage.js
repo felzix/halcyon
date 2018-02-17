@@ -619,6 +619,7 @@ async function interpretLisp(command, lispInterpreter) {
     result = await lispInterpreter.eval(command)
   } catch (err) {
     result = err.stack
+    console.error(err)
     return mk(text(result, 'red'))
   }
 

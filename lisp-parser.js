@@ -32,6 +32,8 @@ atom
   = float
   / integer
   / boolean
+  / nil
+  / null
   / string
   / symbol
   / "." { return Symbol.for(".") }
@@ -69,6 +71,12 @@ integer
 boolean
   = "true" { return true }
   / "false" { return false }
+
+nil
+  = "nil" { return undefined }
+
+null
+  = "null" { return null }
 
 string
   = '"' q:quoted* '"' { return q.join('') }
@@ -316,6 +324,12 @@ const builtins = {
         Object.assign(context, contextToUnload.parent)
       }
     }
+  },
+  'throw': async (context, rest) => {
+    if (rest.length !== 1) {
+      return { error: '`throw` must have exactly 1 argument' }
+    }
+    throw rest[0]
   }
 }
 
@@ -593,6 +607,10 @@ export const defaultContext = {
 export async function evaluate(tree, context) {
   if (typeof context === 'undefined') {
     throw 'Function `evaluate` must be called with a context.'
+  }
+
+  if (typeof tree === 'undefined') {
+      return tree  // nil
   } else if (typeof tree !== 'object') {
     return evoke(tree, context)
   } else if (tree.length === 0){

@@ -59,10 +59,12 @@ export class GeneratedElement extends React.Component {
 
 export function text(thing, color) {
   let style = {}
-  if (typeof color !== 'undefined') style.color = color
+  if (typeof color !== 'undefined') {
+      style.color = color
+  }
 
   if (typeof thing === 'undefined') {  // no value was returned
-    thing = `[UNDEFINED]`  // TODO add a `nil` to lisp?
+    thing = 'nil'
   } else if (typeof thing.nodeName !== 'undefined') {  // it's a DOM element
     thing = new XMLSerializer().serializeToString(thing)  // TODO something more clever than string
   } else if (typeof thing === 'object') {  // some other object
