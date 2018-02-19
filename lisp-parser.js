@@ -286,6 +286,7 @@ const builtins = {
       return { error: '`.` takes at least 2 arguments' }
     } else {
       let container = await evaluate(rest[0], context)
+      let self = container
       const elements = rest.slice(1)
       for (let i = 0; i < elements.length; i++) {
         let element = elements[i]
@@ -295,6 +296,9 @@ const builtins = {
           element = await evaluate(element, context)
         }
         container = container[element]
+      }
+      if (typeof container === 'function') {
+          container.__lisp_bind = self
       }
       return container
     }
@@ -690,7 +694,9 @@ export async function evaluate(tree, context) {
       for (let i = 0; i < rest.length; i++) {
         rest[i] = await evaluate(rest[i], context)
       }
-      let result = first(...rest)
+
+      // __lisp_bind allow methods to work at all. note that undefined is the default for apply
+      let result = first.apply(first.__lisp_bind, rest)
       if (typeof result !== 'undefined' && result.constructor === Promise) {
         result = await result
       }
