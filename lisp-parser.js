@@ -133,23 +133,40 @@ function makeArithmetic(symbol, one, many) {
   }
 }
 
-export function buildLambdaString(rest, block) {
-  const params = rest[0].map(p => { return description(p) })
-  const locals = params.map(p => {
-    return `[Symbol.for('def'), Symbol.for('${p}'), [Symbol.for('quote'), ${p}]]`
-  })
-  const body = toJavascript(rest.slice(1))
-  return `
-    (async function(${params.join(', ')}) {
-      if (arguments.length !== ${params.length}) {
-        return { error: 'has ' + arguments.length + ' arg(s) should have ' + ${params.length} + ' arg(s)'}
-      }
-      let body = [
-        Symbol.for('${block}'),
-          ${locals}]
-      body = body.concat(${body})
-      return await evaluate(body, context)
-    })`
+export function buildLambda(rest, blockType, context) {
+    const params = rest[0].map(p => { return description(p) })
+    const justBody = rest.slice(1)
+
+    return async function() {
+        let body = [
+            Symbol.for(blockType),
+            [
+                Symbol.for('def'),
+                Symbol.for('arguments'),
+                [
+                    Symbol.for('quote'),
+                    arguments
+                ]
+            ]
+        ]
+
+        for (let i = 0; i < params.length; i++) {
+            const param = params[i]
+            const arg = arguments[i]
+            body.push([
+                Symbol.for('def'),
+                Symbol.for(param),
+                [
+                    Symbol.for('quote'),
+                    arg
+                ]
+            ])
+        }
+
+        body = body.concat(justBody)
+        return await evaluate(body, context)
+    }
+
 }
 
 // Necessary because JSON.stringify cannot handle Symbols
@@ -245,16 +262,14 @@ const builtins = {
     if (rest.length < 2) {
       return { error: '`lambda` must have an arguments list and at least one statement' }
     } else {
-      // context comes from the local scope right here
-      return eval(buildLambdaString(rest, 'block'))
+      return buildLambda(rest, 'block', context)
     }
   },
   'lambda!': (context, rest) => {
     if (rest.length < 2) {
       return { error: '`lambda` must have an arguments list and at least one statement' }
     } else {
-      // context comes from the local scope right here
-      return eval(buildLambdaString(rest, 'block!'))  // note the `!`
+      return buildLambda(rest, 'block!', context)  // note the `!`
     }
   },
   eval: async (context, rest) => {
@@ -513,7 +528,14 @@ export const defaultContext = {
       }
       const tag = args[0]
       const props = args[1]
-      const children = args.slice(2)
+      // const children = args[2]
+
+      let children
+      if (Array.isArray(args[2])) {
+          children = args[2]
+      } else {
+          children = args.slice(2)
+      }
       return React.createElement(tag, props, ...children)
     },
     'vis': (...args) => {
@@ -550,7 +572,10 @@ export const defaultContext = {
       }
       const urn = args[0]
       // TODO get defaults from config
-      const { owner, name, version } = node.decodeNodeURN(urn, 'robert', 'unversioned')
+      let { owner, name, version } = node.decodeNodeURN(urn, 'robert', 'unversioned')
+      owner = encodeURIComponent(owner)
+      name = encodeURIComponent(name)
+      version = encodeURIComponent(version)
       try {
         const datum = await $.ajax({
           type: "GET",
@@ -597,7 +622,11 @@ export const defaultContext = {
       }
       const urn = args[0]
       const data = args[1]
-      const { owner, name, version } = node.decodeNodeURN(urn, 'robert', 'unversioned')
+      // TODO get defaults from config
+      let { owner, name, version } = node.decodeNodeURN(urn, 'robert', 'unversioned')
+      owner = encodeURIComponent(owner)
+      name = encodeURIComponent(name)
+      version = encodeURIComponent(version)
       try {
         const datum = await $.ajax({
           type: "PUT",
