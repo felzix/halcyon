@@ -366,6 +366,12 @@ class CommandLineInput extends React.Component {
         }
         break
       }
+      case 'i': {
+          if (altKey && metaKeuy && !(ctrlKey || shiftKey)) {  // dev console
+              preventDefault = false
+          }
+          break
+      }
       case 'r': {
         if (metaKey && !(shiftKey || altKey || ctrlKey)) {  // reload page
          window.location.reload()
