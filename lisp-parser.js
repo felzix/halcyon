@@ -215,6 +215,18 @@ const builtins = {
     const second = await evaluate(rest[1], context)
     return second
   },
+  'and': async (context, rest) => {
+    // TODO enable support for [0, inf) arguments
+    if (rest.length !== 2) {
+        return { error: '`and` must have exactly 2 argumenst'}
+    }
+    const first = await evaluate(rest[0], context)
+    if (!first) {
+        return false
+    }
+    const second = await evaluate(rest[1], context)
+    return Boolean(second)
+  },
   quote: (context, rest) => {
     if (rest.length !== 1) {
       return { error: '`quote` must have exactly 1 argument' }
