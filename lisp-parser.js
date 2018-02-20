@@ -227,6 +227,18 @@ const builtins = {
     const second = await evaluate(rest[1], context)
     return Boolean(second)
   },
+  'while': async (context, rest) => {
+    if (rest.length !== 2) {
+        throw Error("`while` must have exactly 2 arguments")
+    }
+    const condition = rest[0]
+    const statement = rest[1]
+    let value
+    while (await evaluate(condition, context)) {
+        value = await evaluate(statement, context)
+    }
+    return value
+},
   quote: (context, rest) => {
     if (rest.length !== 1) {
       return { error: '`quote` must have exactly 1 argument' }
@@ -241,6 +253,16 @@ const builtins = {
       const symbol = rest[0]
       const value = await evaluate(rest[1], context)
       context.definitions[description(symbol)] = value
+      return value
+    }
+  },
+  define: async (context, rest) => {
+    if (rest.length !== 2) {
+      return { error: '`def` must have exactly 2 arguments' }
+    } else {
+      const symbol_string = await evaluate(rest[0], context)
+      const value = await evaluate(rest[1], context)
+      context.definitions[symbol_string] = value
       return value
     }
   },
