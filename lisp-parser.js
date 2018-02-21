@@ -362,7 +362,6 @@ const builtins = {
       throw new Error('`unload` takes exactly 1 argument')
     } else {
       const contextToUnload = await evaluate(rest[0], context)
-      console.log("unload", contextToUnload)
       if (contextToUnload.parent) {
         contextToUnload.parent.child = contextToUnload.child
       }
@@ -412,6 +411,7 @@ export const defaultContext = {
   child: undefined,  // written here for later clarity
   definitions: {
     // important language stuff
+    list: (...args) => { return args },  // could be done in lisp but it's too useful in tests etc
     type: (...args) => {  // typeof is an operator so it has to be defined here
       if (args.length !== 1) {
         throw new Error('`type` takes exactly 1 argument')

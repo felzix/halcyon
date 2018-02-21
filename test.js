@@ -17,10 +17,25 @@ async function testParse(t, string, expectedTree, expectedResult) {
   t.deepEqual(await evaluate(tree, defaultContext), expectedResult)
 }
 
+async function testException(t, string, expectedTree, errorMessage) {
+  const tree = parse(string)
+  t.deepEqual(tree, expectedTree)
+  const error = await t.throws((async () => {
+      await evaluate(tree, defaultContext)
+  })())
+  t.is(error.message, errorMessage)
+  // TODO when https://github.com/avajs/ava/pull/1650 is available, use this instead:
+  // const err = await t.throws(async () => {
+  //     await evaluate(tree, defaultContext)
+  // }, {
+  //     message: errorMessage
+  // })
+}
+
+
 // built-ins
 const block = Symbol.for('block')
 const block_ = Symbol.for('block_')
-const list = Symbol.for('list')
 const quote = Symbol.for('quote')
 const def = Symbol.for('def')
 const lambda = Symbol.for('lambda')
@@ -51,10 +66,6 @@ test('lisp-parser :: empty string', async t => {
   t.deepEqual(tree, undefined)
 })
 
-test('lisp-parser :: empty list', async t => {
-  await testParse(t, '()', [], [])
-})
-
 test('lisp-parser :: symbol', async t => {
   await testParse(t, 'Math.sqrt', [dot, math, sqrt], Math.sqrt)
 })
@@ -71,19 +82,19 @@ test('lisp-parser :: atom', async t => {
 })
 
 test('lisp-parser :: arithmetic', async t => {
-  await testParse(t, '(+)', [add], { error: '`+` must have at least 1 argument' })
+  await testException(t, '(+)', [add], '`+` must have at least 1 argument')
   await testParse(t, '(+ 5)', [add, 5], 5)
   await testParse(t, '(+ 3 4 5 6)', [add, 3, 4, 5, 6], 3+4+5+6)
 
-  await testParse(t, '(-)', [subtract], { error: '`-` must have at least 1 argument' })
+  await testException(t, '(-)', [subtract], '`-` must have at least 1 argument')
   await testParse(t, '(- 5)', [subtract, 5], -5)
   await testParse(t, '(- 3 4 5 6)', [subtract, 3, 4, 5, 6], 3-4-5-6)
 
-  await testParse(t, '(*)', [multiply], { error: '`*` must have at least 1 argument' })
+  await testException(t, '(*)', [multiply], '`*` must have at least 1 argument')
   await testParse(t, '(* 5)', [multiply, 5], 5)
   await testParse(t, '(* 3 4 5 6)', [multiply, 3, 4, 5, 6], 3*4*5*6)
 
-  await testParse(t, '(/)', [divide], { error: '`/` must have at least 1 argument' })
+  await testException(t, '(/)', [divide], '`/` must have at least 1 argument')
   await testParse(t, '(/ 5)', [divide, 5], 1/5)
   await testParse(t, '(/ 3 4 5 6)', [divide, 3, 4, 5, 6], 3/4/5/6)
 })
@@ -177,28 +188,15 @@ test('lisp-parser :: if', async t => {
 })
 
 test('lisp-parser :: quote', async t => {
-  await testParse(t, '(quote)', [quote], {error: '`quote` must have exactly 1 argument'})
+  await testException(t, '(quote)', [quote], '`quote` must have exactly 1 argument')
   await testParse(t, '(quote ())', [quote, []], [])
   await testParse(t, '(quote 1)', [quote, 1], 1)
   await testParse(t, '(quote (1))', [quote, [1]], [1])
   await testParse(t, '(quote (1 2 3))', [quote, [1, 2, 3]], [1, 2, 3])
   await testParse(t, "'(4 5 6)", [quote, [4, 5, 6]], [4, 5, 6])
-  await testParse(t, "(list '(7 8) '(9 10))",
-    [list, [quote, [7, 8]], [quote, [9, 10]]],
-    [[7, 8], [9, 10]])
   await testParse(t, '(quote (+ 1 (+ 2 3)))',
     [quote, [add, 1, [add, 2, 3]]],
     [add, 1, [add, 2, 3]]
-  )
-})
-
-test('lisp-parser :: list', async t => {
-  await testParse(t, '(list)', [list], [])
-  await testParse(t, '(list ())', [list, []], [[]])
-  await testParse(t, '(list 1 2 3)', [list, 1, 2, 3], [1, 2, 3])
-  await testParse(t, '(list (list 1 2) (list 3) (list))',
-    [list, [list, 1, 2], [list, 3], [list]],
-    [[1, 2], [3], []]
   )
 })
 
@@ -231,52 +229,23 @@ test('lisp-parser :: append', async t => {
 
 test('lisp-parser :: length', async t => {
   t.is(await parseAndEval(
-    `(length (list 8 16))`),
+    `(length '(8 16))`),
     2)
-})
-
-test('lisp-parser :: headrest', async t => {
-  t.deepEqual(
-    await parseAndEval("(head)"),
-    { error: '`head` takes exactly 1 argument' })
-  t.deepEqual(
-    await parseAndEval("(head '())"),
-    { error: 'argument to `head` must be a list of at least 1 element' })
-  t.deepEqual(
-    await parseAndEval("(head '(1))"),
-    1)
-  t.deepEqual(
-    await parseAndEval("(head '(1 2 3))"),
-    1)
-
-  t.deepEqual(
-    await parseAndEval("(rest)"),
-    { error: '`rest` takes exactly 1 argument' })
-  t.deepEqual(
-    await parseAndEval("(rest '())"),
-    { error: 'argument to `rest` must be a list of at least 1 element' })
-  t.deepEqual(
-    await parseAndEval("(rest '(1))"),
-    [])
-    t.deepEqual(
-      await parseAndEval("(rest '(1 2 3))"),
-      [2, 3])
 })
 
 test('lisp-parser :: set-get', async t => {
   t.is(
     await parseAndEval(`
       (block
-        (def x (list))
+        (def x '())
         (set x 0 4)
         (get x 0))`),
     4)
 })
 
 test('lisp-parser :: symbolism', async t => {
-  await testParse(t, '(list (def foo 12) foo)', [list, [def, foo, 12], foo], [12, 12])
-  testParse(t, '(block (def foo 12) foo)', [block, [def, foo, 12], foo], 12)
-  testParse(t, `
+  await testParse(t, '(block (def foo 12) foo)', [block, [def, foo, 12], foo], 12)
+  await testParse(t, `
     (block
       (def foo 12)
       (block
@@ -290,30 +259,9 @@ test('lisp-parser :: symbolism', async t => {
     12)
 })
 
-test('lisp-parser :: util :: buildLambdaString', async t => {
-  const params = [x, y]
-  const body = [multiply, x, y]
-  const rest = [params, body]
-  const context = {'parent': 'fake', 'definitions': {'foo': 'bar'}}
-
-  const string = buildLambdaString(rest, 'block')
-  t.is(string, `
-    (async function(x, y) {
-      if (arguments.length !== 2) {
-        return { error: 'has ' + arguments.length + ' arg(s) should have ' + 2 + ' arg(s)'}
-      }
-      let body = [
-        Symbol.for('block'),
-          [Symbol.for('def'), Symbol.for('x'), [Symbol.for('quote'), x]],[Symbol.for('def'), Symbol.for('y'), [Symbol.for('quote'), y]]]
-      body = body.concat([[Symbol.for('*'), Symbol.for('x'), Symbol.for('y')]])
-      return await evaluate(body, context)
-    })`)
-})
-
 test('lisp-parser :: global', async t => {
   t.truthy(await parseAndEval(`global`))
   t.is(await parseAndEval(`global.uid`), 'default')
-  console.log(await parseAndEval('global'))
   t.falsy(await parseAndEval(`global.parent`))
 
 })
@@ -372,10 +320,10 @@ test('lisp-parser :: lambda', async t => {
   await testParse(t, `
     (block
       (def foo (lambda (x) x))
-      (foo (list 2 4 8)))`,
+      (foo '(2 4 8)))`,
     [block,
       [def, foo, [lambda, [x], x]],
-      [foo, [list, 2, 4, 8]]],
+      [foo, [quote, [2, 4, 8]]]],
     [2, 4, 8])
 })
 
@@ -385,32 +333,24 @@ test('lisp-parser :: lambda!', async t => {
       (def foo (lambda! (x)
         (def y 17)))
       (foo 9)
-      (list x y))`,
+      (+ x y))`,
     [block,
       [def, foo, [lambda_, [x],
         [def, y, 17]]],
       [foo, 9],
-      [list, x, y]],
-    [9, 17])
+      [add, x, y]],
+    9 + 17)
 })
 
 test('lisp-parser :: lambda wrong args', async t => {
-  await testParse(t, `
+  await testException(t, `
     (block
       (def m (lambda (x y) (* x y)))
       (m 8))`,
     [block,
       [def, m, [lambda, [x, y], [multiply, x, y]]],
       [m, 8]],
-    { error: 'has 1 arg(s) should have 2 arg(s)' })
-  await testParse(t, `
-    (block
-      (def m (lambda (x y) (* x y)))
-      (m 8 9 10))`,
-    [block,
-      [def, m, [lambda, [x, y], [multiply, x, y]]],
-      [m, 8, 9, 10]],
-    { error: 'has 3 arg(s) should have 2 arg(s)' })
+    'y is not defined')
 })
 
 test('lisp-parser :: closure', async t => {
@@ -434,7 +374,7 @@ test('lisp-parser :: interpreter', async t => {
   const interpreter = makeInterpreter(defaultContext)
   t.is(await interpreter.eval('1'), 1)
   t.is(await interpreter.eval('(quote 7)'), 7)
-  t.deepEqual(await interpreter.eval('(list 6 7)'), [6, 7])
+  t.deepEqual(await interpreter.eval("'(6 7)"), [6, 7])
   t.is(await interpreter.eval('(def a 19)'), 19)
   t.is(await interpreter.eval('a'), 19)
 })
