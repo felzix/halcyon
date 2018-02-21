@@ -71,12 +71,15 @@ export function text(thing, color) {
     thing = JSON.stringify(thing)
   } else if (typeof thing.nodeName !== 'undefined') {  // it's a DOM element
     thing = new XMLSerializer().serializeToString(thing)  // TODO something more clever than string
+  } else if (thing instanceof Error) {
+    thing = thing.toString()
   } else if (typeof thing === 'object') {  // some other object
     try {
       thing = CircularJSON.stringify(thing)
     } catch (err) {
-      thing = 'ERROR: object cannot be serialized'
+      thing = 'object cannot be serialized'
       style.color = 'red'
+      style.fontStyle = 'italic'
     }
   } else if (typeof thing === 'function') {
     thing = `[Function: ${thing.name}]`
