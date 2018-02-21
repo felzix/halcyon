@@ -11,9 +11,6 @@ import { GeneratedElement, Editor, uploadConfig } from './results'
 import node from './node'
 
 
-// TODO ignore commas in mappings
-// TODO mapping value (and maybe key?) cannot have a number in a symbol but should be allowed to
-//      ex: {"Cmd-S": save2}
 const grammar = `
 {
   function log(thing) {
@@ -88,7 +85,7 @@ quoted
 
 symbolic = [a-zA-Z:;_$!?><=+*/-]
 latterSymbolic = [0-9a-zA-Z:;_$!?><=+*/-]
-_ = [ \\t\\n]*
+_ = [ \\t\\n,]*
 `
 const parser = generate(grammar)
 
