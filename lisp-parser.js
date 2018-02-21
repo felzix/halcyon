@@ -412,7 +412,7 @@ export const defaultContext = {
   definitions: {
     // important language stuff
     list: (...args) => { return args },  // could be done in lisp but it's too useful in tests etc
-    type: (...args) => {  // typeof is an operator so it has to be defined here
+    typeof: (...args) => {  // typeof is an operator so it has to be defined here
       if (args.length !== 1) {
         throw new Error('`type` takes exactly 1 argument')
       }
