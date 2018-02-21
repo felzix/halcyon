@@ -415,28 +415,9 @@ export const defaultContext = {
   child: undefined,  // written here for later clarity
   definitions: {
     // important language stuff
-    list: (...args) => { return args },
-    head: (...args) => {
+    type: (...args) => {  // typeof is an operator so it has to be defined here
       if (args.length !== 1) {
-        return { error: '`head` takes exactly 1 argument' }
-      } else if (!Array.isArray(args[0]) || args[0].length === 0) {
-        return { error: 'argument to `head` must be a list of at least 1 element' }
-      } else {
-        return args[0][0]
-      }
-    },
-    rest: (...args) => {
-      if (args.length !== 1) {
-        return { error: '`rest` takes exactly 1 argument' }
-      } else if (!Array.isArray(args[0]) || args[0].length === 0) {
-        return { error: 'argument to `rest` must be a list of at least 1 element' }
-      } else {
-        return args[0].slice(1)
-      }
-    },
-    type: (...args) => {
-      if (args.length !== 1) {
-        return { error: '`type` takes exactly 1 argument'}
+        throw new Error('`type` takes exactly 1 argument')
       }
       return typeof args[0]
     },
