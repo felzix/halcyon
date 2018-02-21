@@ -235,7 +235,19 @@ const builtins = {
         value = await evaluate(statement, context)
     }
     return value
-},
+  },
+  'each': async (context, rest) => {
+    if (rest.length !== 2) {
+        throw new Error("`each` must have exactly 2 arguments")
+    }
+    const list = await evaluate(rest[0], context)
+    const fn = await evaluate(rest[1], context)
+    let value
+    for (let i = 0; i < list.length; i++) {
+        value = await fn(list[i])
+    }
+    return value
+  },
   quote: (context, rest) => {
     if (rest.length !== 1) {
       throw new Error('`quote` must have exactly 1 argument')
@@ -412,9 +424,9 @@ export const defaultContext = {
   definitions: {
     // important language stuff
     list: (...args) => { return args },  // could be done in lisp but it's too useful in tests etc
-    typeof: (...args) => {  // typeof is an operator so it has to be defined here
+    'type': (...args) => {  // typeof is an operator so it has to be defined here
       if (args.length !== 1) {
-        throw new Error('`type` takes exactly 1 argument')
+        throw new Error('`typeof` takes exactly 1 argument')
       }
       return typeof args[0]
     },
