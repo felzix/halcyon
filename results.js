@@ -84,10 +84,13 @@ export function text(thing, color) {
         thing = `[Function: ${thing.name}]`
     }
 
+    /* jshint ignore:start */
     const dom = (
         <pre style={style}>
             {thing}
+
         </pre>)
+    /* jshint ignore:end */
     return React.createElement(GeneratedElement, { dom })
 }
 
@@ -106,11 +109,13 @@ export function uploadConfig() {
         }
         // reader.readAsText(file)
     }
+    /* jshint ignore:start */
     const dom = (
         <div>
             Upload JSON config file.
             <input type="file" id="loadConfigFileInput" onChange={onChange}/>
         </div>)
+    /* jshint ignore:end */
     return React.createElement(GeneratedElement, { dom })
 }
 
@@ -166,6 +171,7 @@ export class Editor extends React.Component {
     }
 
     render() {
+        /* jshint ignore:start */
         const dom = (
             <div onKeyPress={this.handleKeyPress}
                  onKeyUp={this.handleKeyUp}
@@ -175,6 +181,7 @@ export class Editor extends React.Component {
                     options={this.props.options}
                     ref={cm => { this.codeMirror = cm }}/>
             </div>)
+        /* jshint ignore:end */
         return React.createElement(GeneratedElement, { dom })
     }
 }

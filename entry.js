@@ -7,7 +7,9 @@ import store from "./store"
 
 
 window.onload = () => {
+    /* jshint ignore:start */
     ReactDOM.render(<IndexPage/>, document.getElementById("root"))
+    /* jshint ignore:end */
 }
 
 
