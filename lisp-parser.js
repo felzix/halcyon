@@ -163,7 +163,6 @@ export function buildLambda(rest, blockType, context) {
         body = body.concat(justBody)
         return await evaluate(body, context)
     }
-
 }
 
 function description(symbol) {
@@ -541,7 +540,6 @@ export const defaultContext = {
             }
             const tag = args[0]
             const props = args[1]
-            // const children = args[2]
 
             let children
             if (Array.isArray(args[2])) {
