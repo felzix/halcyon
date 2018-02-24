@@ -576,6 +576,12 @@ export const defaultContext = {
             }
             return args[0]
         },
+        uuid: (...args) => {
+            if (args.length !== 0) {
+                throw new Error("`uuid` requires exactly zero arguments")
+            }
+            return uuid4()
+        },
         config: () => { return uploadConfig() },
         node: async (...args) => {
             if (args.length !== 1) {

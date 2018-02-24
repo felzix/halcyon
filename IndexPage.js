@@ -30,9 +30,9 @@ class App extends React.Component {
 
         // If there is a startup script then execute it now.
         if (typeof this.props.config.startupScript === "string") {
-            await this.props.lispInterpreter.eval(`
-        (eval (node "${this.props.config.startupScript}"))
-      `)
+            await this.props.lispInterpreter.eval(
+                `(eval (node "${this.props.config.startupScript}"))`
+            )
         }
     }
 
@@ -526,7 +526,7 @@ class CommandLineInput extends React.Component {
                     padding: "15px",
                     display: "block"}}>
                 <label>
-          > {" "}
+                    > {" "}
                     <input type="text"
                         id="cli-input"
                         style={{width: "90%"}}
