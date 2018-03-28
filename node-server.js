@@ -10,6 +10,7 @@ app.use(bodyParser.text()) // for parsing text
 // app.use(bodyParser.json()) // for parsing application/json
 // app.use(bodyParser.urlencoded({ extended: true })) // for parsing application/x-www-form-urlencoded
 
+// CORS
 app.use(function(request, response, next) {
     response.header("Access-Control-Allow-Origin", "*")
     response.header("Access-Control-Allow-Methods", "GET,PUT")
