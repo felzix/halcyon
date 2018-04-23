@@ -1,0 +1,133 @@
+What would a minimally useful Halcyon look like?
+Specifically, Halcyon should be useful enough that I choose to use it when I want to be effective.
+
+From the functional perspective:
+* I can perform basic mathematical calculations.
+* I can track my activity and reason about it.
+  * Data entry is easy to bring up/orient and easy to do.
+  * I can perform calculations on the data.
+    * The data must be exposed to the CLI.
+  * There is data visualization.
+    * Data exposed to the CLI can be fed into functions that emit visualizations.
+    * Sometimes visualizations are better if they are changeable so they should expose API hooks.
+      An API hook is a function callable in the CLI that affects the visualization. In this sense,
+      a visualization is also some internal state and mechanism(s) for manipulating that state.
+* I can back up my data to the cloud, encrypted.
+  * Encrypt the json files and upload them to google drive (or 1pass? or elsewhere?).
+  * Store the encryption key in 1pass. Retrieve from 1pass.
+* Remember history between sessions.
+  * Fail cleanly so backwards-compatibility can be ignored.
+
+From the technical perspective:
+* Mathematics over integers and floats.
+  * Arithmetic.
+  * Arithmetic shorthands like Math.sqrt.
+  * Possibly others. Ideally Wolfram Alpha but that's turning out to be a lot of additional work.
+* 1password
+  * There is no API so the only good way is to have the user enter their private key themselves.
+    1password and other password managers can then autofill that field.
+
+---
+
+Objective Space
+===============
+space := list|map
+History := [object]
+toplevel context := string -> (object|space)
+
+---
+
+(def import (lambda (urn))
+  (def data (node urn))
+  (def definitions (unserialize data))
+  (load definitions global))
+
+
+(def edit
+  (block
+    (def save-node save)
+    (def save (lambda (cm nodeUrn)
+                (log "saved ^")
+                (save-node nodeUrn (cm.getText))))
+    (lambda (nodeUrn)
+      (react
+         Editor
+           {"value": (node nodeUrn)
+            "ref": (lambda (cm)
+                     (def cli-fns {"cm": cm
+                                   "paren-mode": (lambda ()
+                                                    (cm.setMode "paren"))
+                                   "indent-mode": (lambda ()
+                                                    (cm.setMode "indent"))
+                                   "save": (lambda () (save cm nodeUrn))
+                                   "done": (lambda ()
+                                             (log context)
+                                             (unload context))})
+                    (def context (load cli-fns global)))
+             "options": {"lineNumbers": true
+                         "matchBrackets": true
+                         "extraKeys": {"F11": (lambda (_)
+                                                (cm.setOption "fullScreen" (not (cm.getOption "fullScreen"))))
+                                       "Esc": (lambda (_)
+                                                (cm.setOption "fullScreen" false))
+                                       "Cmd-S": (lambda (_) (alert "wat") (log "how") (save cm nodeUrn))}}}))))
+
+---
+
+(def r (lambda (n)
+  (console.log n)
+  (r n)))
+
+(def b (lambda (sequence fn)
+  (console.log "nein")
+  (console.log sequence)
+  (console.log fn)
+  sequence))
+
+(def each (lambda (sequence fn)
+  (if (> (length sequence) 0)
+    (block
+      (fn (head sequence))
+      (each (rest sequence) fn)))))
+
+(each (list 2 3) (lambda (x) (console.log x)))
+
+(def map (lambda (sequence fn)
+  (def resultantSequence {"seq": (list)})
+  (def accumulate (lambda (x)
+    (set resultantSequence "seq" (append resultantSequence.seq (fn x)))))
+  (each sequence accumulate)
+  resultantSequence.seq))
+
+(def listy (block
+  (def state {"list": []})
+  (def addLine (lambda (line))
+    (append state.list line))
+  (def (render (lambda ()
+    (react "ul" (list
+      (react "li" (list (get state.list.0)))
+    )))))
+  {"addLine": addLine
+   "render" render}))
+
+---
+
+TODO actually an object can have multiple `vis` components
+     react doesn't render a component twice, it renders different components
+     when `simple.setSimple` is called, each `vis.dom` must be updated
+
+an object with a single string for state
+its vis is just that string
+it provides a method for changing that string
+executing that method should rerender the vis
+
+(def simple (lambda ()
+  (def defaultS "default")
+  (def self {
+    "s": defaultS
+    "vis": (vis (react "div" defaultS))
+  })
+  (set self "setSimple" (lambda (newString)
+    (set self "s" newString)
+    (self.vis.set "dom" (react "div" newString))))
+  self))
