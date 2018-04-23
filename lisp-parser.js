@@ -120,29 +120,39 @@ const builtins = {
             }
         })
     },
-    "or": async (context, rest) => {
+    "or": (context, rest) => {
         // TODO enable support for [0, inf) arguments
         if (rest.length !== 2) {
             throw new Error("`or` must have exactly 2 argumenst")
         }
-        const first = await evaluate(rest[0], context)
-        if (first) {
-            return first
-        }
-        const second = await evaluate(rest[1], context)
-        return second
+        const left = rest[0]
+        const right = rest[1]
+
+        return oathJudge(left, context, left => {
+            if (left) {
+                return left
+            } else {
+                return evaluate(right, context)
+            }
+        })
     },
-    "and": async (context, rest) => {
+    "and": (context, rest) => {
         // TODO enable support for [0, inf) arguments
         if (rest.length !== 2) {
             throw new Error("`and` must have exactly 2 argumenst")
         }
-        const first = await evaluate(rest[0], context)
-        if (!first) {
-            return false
-        }
-        const second = await evaluate(rest[1], context)
-        return Boolean(second)
+        const left = rest[0]
+        const right = rest[1]
+
+        return oathJudge(left, context, left => {
+            if (!left) {
+                return left
+            } else {
+                return oathJudge(right, context, right => {
+                    return Boolean(right)
+                })
+            }
+        })
     },
     "while": async (context, rest) => {
         if (rest.length !== 2) {
@@ -175,24 +185,32 @@ const builtins = {
             return rest[0]  // don't interpret the rest
         }
     },
-    def: async (context, rest) => {
+    def: (context, rest) => {
         if (rest.length !== 2) {
             throw new Error("`def` must have exactly 2 arguments")
         } else {
             const symbol = rest[0]
-            const value = await evaluate(rest[1], context)
-            context.definitions[description(symbol)] = value
-            return value
+            const value = rest[1]
+
+            return oathJudge(value, context, value => {
+                context.definitions[description(symbol)] = value
+                return value
+            })
         }
     },
-    define: async (context, rest) => {
+    define: (context, rest) => {
         if (rest.length !== 2) {
             throw new Error("`def` must have exactly 2 arguments")
         } else {
-            const symbol_string = await evaluate(rest[0], context)
-            const value = await evaluate(rest[1], context)
-            context.definitions[symbol_string] = value
-            return value
+            const symbol = rest[0]
+            const value = rest[1]
+
+            return oathJudge(symbol, context, symbol_string => {
+                return oathJudge(value, context, value => {
+                    context.definitions[symbol_string] = value
+                    return value
+                })
+            })
         }
     },
     block: async (context, rest) => {
@@ -235,13 +253,16 @@ const builtins = {
             return buildLambda(rest, "block!", context)  // note the `!`
         }
     },
-    eval: async (context, rest) => {
+    eval: (context, rest) => {
         if (rest.length !== 1) {
             throw new Error("`eval` must have exactly 1 argument")
         } else {
-            const arg = await evaluate(rest[0], context)
-            const body = `(block! ${arg})`
-            return await evaluate(parser.parse(body), context)
+            const arg = rest[0]
+
+            return oathJudge(arg, context, arg => {
+                const body = `(block! ${arg})`
+                return evaluate(parser.parse(body), context)
+            })
         }
     },
     ".": async (context, rest) => {
@@ -306,7 +327,7 @@ const builtins = {
             }
         }
     },
-    "throw": async (context, rest) => {
+    "throw": (context, rest) => {
         if (rest.length !== 1) {
             throw new Error("`throw` must have exactly 1 argument")
         }
