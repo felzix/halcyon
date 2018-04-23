@@ -631,25 +631,24 @@ export async function evaluate(tree, context) {
         first = await first
     }
 
-    switch (typeof first) {
-    case "function": {
-        rest = await Promise.all(rest.map(x => evaluate(x, context)))
+    if (typeof first === "function") {
+        return lispApply(first, rest, context)
+    } else if (typeof first === "object" && first.__isMacro) {
+        throw Error("Macros not yet supported")
+    } else {
+        throw Error(`First argument in list must be function, Promise, or macro not ${first}`)
+    }
+}
 
-        // __lisp_bind allow methods to work at all. note that undefined is the default for apply
-        let result = first.apply(first.__lisp_bind, rest)
-        if (typeof result === "object" && result.constructor === Promise) {
-            result = await result
-        }
-        return result
+async function lispApply(first, rest, context) {
+    rest = await Promise.all(rest.map(x => evaluate(x, context)))
+
+    // __lisp_bind allow methods to work at all. note that undefined is the default for apply
+    let result = first.apply(first.__lisp_bind, rest)
+    if (typeof result === "object" && result.constructor === Promise) {
+        result = await result
     }
-    case "macro": {
-        // TODO this is theoretical right now
-        break
-    }
-    default: {
-        // TODO throw an error
-    }
-    }
+    return result
 }
 
 export function makeInterpreter(globalContext) {
