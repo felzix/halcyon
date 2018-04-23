@@ -1,3 +1,5 @@
+/* eslint-disable react/prop-types, no-console, no-class-assign */
+
 import "babel-polyfill"  // necessary for await/async to work
 import React from "react"
 import ReactDOM from "react-dom"
@@ -150,8 +152,7 @@ class CommandLineInput extends React.Component {
     // Handles non-repeatable control characters or control sequences.
     handleKeyUp(event) {
         event.stopPropagation()
-        const {key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey} = event
-        const value = this.state.value
+        const {key, ctrlKey, shiftKey, altKey, metaKey} = event
         if (key.length === 1) {  // might just be a printable
             // TODO are these ever brought here?
             if (ctrlKey || shiftKey || altKey || metaKey) {  // this is a control sequence!
@@ -174,9 +175,8 @@ class CommandLineInput extends React.Component {
     // Handles repeatable control characters or control sequences.
     handleKeyDown(event) {
         event.stopPropagation()
-        const { key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey } = event
+        const { key, ctrlKey, shiftKey, altKey, metaKey } = event
         let { cursorStart, cursorEnd, value } = this.state
-        const { selectionLeft, selectionRight } = this.inputElement
 
         if (key.length === 1 && !(ctrlKey || altKey || metaKey)) {  // shiftKey for capitalization etc
             return  // printable so do nothing
@@ -186,245 +186,246 @@ class CommandLineInput extends React.Component {
 
         // NOTE: Every event here has a match in handleKeyUp so beware duplication
         switch(key) {
-            case "Backspace": {
-                if (altKey) {
-                    cursorStart -= 1
-                    while (cursorStart >= 0) {
-                        const char = value[cursorStart - 1]
-                        if (!this.isWordChar(char)) {
-                            break
-                        }
-                        // TODO handle skipping whitespace OR words instead of only ever words
-                        cursorStart -= 1
+        case "Backspace": {
+            if (altKey) {
+                cursorStart -= 1
+                while (cursorStart >= 0) {
+                    const char = value[cursorStart - 1]
+                    if (!this.isWordChar(char)) {
+                        break
                     }
+                    // TODO handle skipping whitespace OR words instead of only ever words
+                    cursorStart -= 1
                 }
-                if (cursorStart === cursorEnd) {
-                    cursorStart -= 1  // if no selection, delete 1 left of cursor
-                }
-
-                if (cursorStart < 0) {  // can't delete past the beginning of the line
-                    cursorStart = 0
-                }
-
-                this.setState({
-                    value: value.slice(0, cursorStart) + value.slice(cursorEnd, value.length),
-                    cursorStart,
-                    cursorEnd: cursorStart
-                })
-
-                break
             }
-            case "Delete": {
-                if (altKey) {  // delete one word
+            if (cursorStart === cursorEnd) {
+                cursorStart -= 1  // if no selection, delete 1 left of cursor
+            }
+
+            if (cursorStart < 0) {  // can't delete past the beginning of the line
+                cursorStart = 0
+            }
+
+            this.setState({
+                value: value.slice(0, cursorStart) + value.slice(cursorEnd, value.length),
+                cursorStart,
+                cursorEnd: cursorStart
+            })
+
+            break
+        }
+        case "Delete": {
+            if (altKey) {  // delete one word
+                cursorEnd += 1
+                while (cursorEnd < value.length) {
+                    const char = value[cursorEnd]
+                    if (!this.isWordChar(char)) {
+                        break
+                    }
+                    // TODO handle skipping whitespace OR words instead of only ever words
                     cursorEnd += 1
-                    while (cursorEnd < value.length) {
-                        const char = value[cursorEnd]
-                        if (!this.isWordChar(char)) {
-                            break
-                        }
-                        // TODO handle skipping whitespace OR words instead of only ever words
-                        cursorEnd += 1
-                    }
                 }
-                if (cursorStart === cursorEnd) {
-                    cursorEnd += 1  // if no selection, delete 1 right of cursor
-                }
-
-                if (cursorEnd > value.length) {  // can't delete past the end of the line
-                    cursorEnd = value.length
-                }
-
-                this.setState({
-                    value: value.slice(0, cursorStart) + value.slice(cursorEnd, value.length),
-                    cursorStart,
-                    cursorEnd: cursorStart
-                })
-
-                break
             }
-            case "ArrowLeft": {
-                if (metaKey && shiftKey) {  // select from here to beginning
-                    cursorStart = 0
-                } else if (metaKey && !shiftKey) {  // go to beginning
-                    cursorStart = cursorEnd = 0
-                } else if (shiftKey && !(metaKey || altKey)) {  // select one more to the left
-                    cursorStart -= 1
-                } else if (altKey) {  // move or select one word to the left
-                    cursorStart -= 1
-                    while (cursorStart >= 0) {
-                        const char = value[cursorStart - 1]
-                        if (!this.isWordChar(char)) {
-                            break
-                        }
-                        // TODO handle skipping whitespace OR words instead of only ever words
-                        cursorStart -= 1
+            if (cursorStart === cursorEnd) {
+                cursorEnd += 1  // if no selection, delete 1 right of cursor
+            }
+
+            if (cursorEnd > value.length) {  // can't delete past the end of the line
+                cursorEnd = value.length
+            }
+
+            this.setState({
+                value: value.slice(0, cursorStart) + value.slice(cursorEnd, value.length),
+                cursorStart,
+                cursorEnd: cursorStart
+            })
+
+            break
+        }
+        case "ArrowLeft": {
+            if (metaKey && shiftKey) {  // select from here to beginning
+                cursorStart = 0
+            } else if (metaKey && !shiftKey) {  // go to beginning
+                cursorStart = cursorEnd = 0
+            } else if (shiftKey && !(metaKey || altKey)) {  // select one more to the left
+                cursorStart -= 1
+            } else if (altKey) {  // move or select one word to the left
+                cursorStart -= 1
+                while (cursorStart >= 0) {
+                    const char = value[cursorStart - 1]
+                    if (!this.isWordChar(char)) {
+                        break
                     }
-                    if (!shiftKey) {  // just move, don't select
-                        cursorEnd = cursorStart
-                    }
-                } else {  // move one to the left
+                    // TODO handle skipping whitespace OR words instead of only ever words
                     cursorStart -= 1
+                }
+                if (!shiftKey) {  // just move, don't select
                     cursorEnd = cursorStart
                 }
-
-                let { start, end } = this.inbounds(cursorStart, cursorEnd, value.length)
-                this.setState({ cursorStart: start, cursorEnd: end })
-                break
+            } else {  // move one to the left
+                cursorStart -= 1
+                cursorEnd = cursorStart
             }
-            case "ArrowRight": {
-                const max = value.length
 
-                if (metaKey && shiftKey) {  // select from here to ending
-                    cursorEnd = max
-                } else if (metaKey && !shiftKey) {  // go to ending
-                    cursorEnd = cursorStart = max
-                } else if (shiftKey && !(metaKey || altKey)) {  // select one more to the right
-                    cursorEnd += 1
-                } else if (altKey) {
-                    cursorEnd += 1
-                    while (cursorEnd < value.length) {
-                        const char = value[cursorEnd]
-                        if (!this.isWordChar(char)) {
-                            break
-                        }
-                        // TODO handle skipping whitespace OR words instead of only ever words
-                        cursorEnd += 1
+            let { start, end } = this.inbounds(cursorStart, cursorEnd, value.length)
+            this.setState({ cursorStart: start, cursorEnd: end })
+            break
+        }
+        case "ArrowRight": {
+            const max = value.length
+
+            if (metaKey && shiftKey) {  // select from here to ending
+                cursorEnd = max
+            } else if (metaKey && !shiftKey) {  // go to ending
+                cursorEnd = cursorStart = max
+            } else if (shiftKey && !(metaKey || altKey)) {  // select one more to the right
+                cursorEnd += 1
+            } else if (altKey) {
+                cursorEnd += 1
+                while (cursorEnd < value.length) {
+                    const char = value[cursorEnd]
+                    if (!this.isWordChar(char)) {
+                        break
                     }
-                    if (!shiftKey) {  // just move, don't select
-                        cursorStart = cursorEnd
-                    }
-                } else {  // move one to the right
+                    // TODO handle skipping whitespace OR words instead of only ever words
                     cursorEnd += 1
+                }
+                if (!shiftKey) {  // just move, don't select
                     cursorStart = cursorEnd
                 }
-                let { start, end } = this.inbounds(cursorStart, cursorEnd, max)
-                this.setState({ cursorStart: start, cursorEnd: end })
-                break
+            } else {  // move one to the right
+                cursorEnd += 1
+                cursorStart = cursorEnd
             }
-            case "ArrowUp": {
-                let { historyPosition } = this.state
-                let { history } = this.props
-                historyPosition = historyPosition === null ? history.length - 1 : historyPosition - 1
-                if (historyPosition >= 0) {
+            let { start, end } = this.inbounds(cursorStart, cursorEnd, max)
+            this.setState({ cursorStart: start, cursorEnd: end })
+            break
+        }
+        case "ArrowUp": {
+            let { historyPosition } = this.state
+            let { history } = this.props
+            historyPosition = historyPosition === null ? history.length - 1 : historyPosition - 1
+            if (historyPosition >= 0) {
+                const value = history[historyPosition].command
+                this.setState({
+                    historyPosition,
+                    value,
+                    cursorStart: value.length,
+                    cursorEnd: value.length
+                })
+            }
+            break
+        }
+        case "ArrowDown": {
+            let { historyPosition } = this.state
+            let { history } = this.props
+            if (historyPosition === null) {  // already past the end
+                break
+            } else {
+                historyPosition += 1
+                if (historyPosition >= history.length) {  // go past the end
+                    this.setState({ value: "", historyPosition: null })
+                } else {
                     const value = history[historyPosition].command
                     this.setState({
-                        historyPosition,
+                        historyPosition: historyPosition,
                         value,
                         cursorStart: value.length,
                         cursorEnd: value.length
                     })
                 }
-                break
             }
-            case "ArrowDown": {
-                let { historyPosition } = this.state
-                let { history } = this.props
-                if (historyPosition === null) {  // already past the end
-                    break
-                } else {
-                    historyPosition += 1
-                    if (historyPosition >= history.length) {  // go past the end
-                        this.setState({ value: "", historyPosition: null })
-                    } else {
-                        const value = history[historyPosition].command
-                        this.setState({
-                            historyPosition: historyPosition,
-                            value,
-                            cursorStart: value.length,
-                            cursorEnd: value.length
-                        })
-                    }
-                }
+            break
+        }
+        case "a": {
+            if (metaKey && !(ctrlKey || shiftKey || altKey)) {  // select all
+                this.setState({ cursorStart: 0, cursorEnd: value.length })
+            } else if (ctrlKey && !(shiftKey || altKey || metaKey)) {  // start of line
+                this.setState({ cursorStart: 0, cursorEnd: 0})
             }
-            case "a": {
-                if (metaKey && !(ctrlKey || shiftKey || altKey)) {  // select all
-                    this.setState({ cursorStart: 0, cursorEnd: value.length })
-                } else if (ctrlKey && !(shiftKey || altKey || metaKey)) {  // start of line
-                    this.setState({ cursorStart: 0, cursorEnd: 0})
-                }
-                break
+            break
+        }
+        case "c": {
+            if (metaKey && !(ctrlKey || shiftKey || altKey)) {  // copy to clipboard
+                document.execCommand("copy")
+            } else if (ctrlKey && !(shiftKey || altKey || metaKey)) {  // start of line
+                this.setState({ cursorStart: 0, cursorEnd: 0})
             }
-            case "c": {
-                if (metaKey && !(ctrlKey || shiftKey || altKey)) {  // copy to clipboard
-                    document.execCommand("copy")
-                } else if (ctrlKey && !(shiftKey || altKey || metaKey)) {  // start of line
-                    this.setState({ cursorStart: 0, cursorEnd: 0})
-                }
-                break
+            break
+        }
+        case "e": {
+            if (ctrlKey && !(shiftKey || altKey || metaKey)) {  // end of line
+                this.setState({ cursorStart: value.length, cursorEnd: value.length})
             }
-            case "e": {
-                if (ctrlKey && !(shiftKey || altKey || metaKey)) {  // end of line
-                    this.setState({ cursorStart: value.length, cursorEnd: value.length})
-                }
-                break
-            }
-            case "i": {
-                if (altKey && metaKey && !(ctrlKey || shiftKey)) {  // dev console
-                    preventDefault = false
-                }
-                break
-            }
-            case "r": {
-                if (metaKey && !(shiftKey || altKey || ctrlKey)) {  // reload page
-                    window.location.reload()
-                }
-                break
-            }
-            case "v": {
-                if (metaKey && !(ctrlKey || shiftKey || altKey)) {  // paste from clipboard
-                    // Nothing to do here. This is dealt with via the onPaste handler.
-                    // It's not possible to paste from javascript w/o an extension overriding security.
-                    preventDefault = false
-                }
-                break
-            }
-            case "x": {
-                if (metaKey && !(ctrlKey || shiftKey || altKey)) {  // cut to clipboard
-                    document.execCommand("cut")
-                    this.setState({
-                        value: value.slice(0, cursorStart) + value.slice(cursorEnd, value.length),
-                        cursorStart,
-                        cursorEnd: cursorStart
-                    })
-                }
-                break
-            }
-            case "1": {  // switch to another tab
+            break
+        }
+        case "i": {
+            if (altKey && metaKey && !(ctrlKey || shiftKey)) {  // dev console
                 preventDefault = false
-                break
             }
-            case "2": {  // switch to another tab
+            break
+        }
+        case "r": {
+            if (metaKey && !(shiftKey || altKey || ctrlKey)) {  // reload page
+                window.location.reload()
+            }
+            break
+        }
+        case "v": {
+            if (metaKey && !(ctrlKey || shiftKey || altKey)) {  // paste from clipboard
+                // Nothing to do here. This is dealt with via the onPaste handler.
+                // It's not possible to paste from javascript w/o an extension overriding security.
                 preventDefault = false
-                break
             }
-            case "3": {  // switch to another tab
-                preventDefault = false
-                break
+            break
+        }
+        case "x": {
+            if (metaKey && !(ctrlKey || shiftKey || altKey)) {  // cut to clipboard
+                document.execCommand("cut")
+                this.setState({
+                    value: value.slice(0, cursorStart) + value.slice(cursorEnd, value.length),
+                    cursorStart,
+                    cursorEnd: cursorStart
+                })
             }
-            case "4": {  // switch to another tab
-                preventDefault = false
-                break
-            }
-            case "5": {  // switch to another tab
-                preventDefault = false
-                break
-            }
-            case "6": {  // switch to another tab
-                preventDefault = false
-                break
-            }
-            case "7": {  // switch to another tab
-                preventDefault = false
-                break
-            }
-            case "8": {  // switch to another tab
-                preventDefault = false
-                break
-            }
-            case "9": {  // switch to another tab
-                preventDefault = false
-                break
-            }
+            break
+        }
+        case "1": {  // switch to another tab
+            preventDefault = false
+            break
+        }
+        case "2": {  // switch to another tab
+            preventDefault = false
+            break
+        }
+        case "3": {  // switch to another tab
+            preventDefault = false
+            break
+        }
+        case "4": {  // switch to another tab
+            preventDefault = false
+            break
+        }
+        case "5": {  // switch to another tab
+            preventDefault = false
+            break
+        }
+        case "6": {  // switch to another tab
+            preventDefault = false
+            break
+        }
+        case "7": {  // switch to another tab
+            preventDefault = false
+            break
+        }
+        case "8": {  // switch to another tab
+            preventDefault = false
+            break
+        }
+        case "9": {  // switch to another tab
+            preventDefault = false
+            break
+        }
         }
 
         if (preventDefault) {
@@ -435,8 +436,7 @@ class CommandLineInput extends React.Component {
     // Handles printable characters.
     handleKeyboard(event) {
         event.stopPropagation()
-        const { key, keyCode, charCode, which, ctrlKey, shiftKey, altKey, metaKey } = event
-        let value = this.state.value
+        const { key, ctrlKey, altKey, metaKey } = event
         if (key.length > 1) {  // non-printable so let handleKeyUp deal with it
             return
         }
@@ -451,19 +451,19 @@ class CommandLineInput extends React.Component {
     handleOnPaste(event) {
         event.stopPropagation()
         event.preventDefault()
-        const { target, clipboardData } = event
+        const { clipboardData } = event
         const text = clipboardData.getData("Text")
         this.addText(text)
     }
 
-    handleClick(event) {
+    handleClick() {
         this.setState({
             cursorStart: this.inputElement.selectionStart,
             cursorEnd: this.inputElement.selectionEnd  // should be identical to selectionStart though
         })
     }
 
-    handleUnclick(event) {
+    handleUnclick() {
         this.setState({
             cursorStart: this.inputElement.selectionStart,
             cursorEnd: this.inputElement.selectionEnd
@@ -526,7 +526,7 @@ class CommandLineInput extends React.Component {
                     padding: "15px",
                     display: "block"}}>
                 <label>
-                    > {" "}
+                    {"> "}
                     <input type="text"
                         id="cli-input"
                         style={{width: "90%"}}
@@ -586,7 +586,7 @@ History = connect(
             lispInterpreter: state.lispInterpreter
         }
     },
-    dispatch => {
+    () => {
         return {}
     })(History)
 

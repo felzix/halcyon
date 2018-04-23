@@ -1,4 +1,4 @@
-/* jshint -W061, -W054, -W086 */
+/* eslint-disable react/display-name, no-console */
 
 import "babel-polyfill"  // necessary for await/async to work
 import $ from "jquery"
@@ -661,7 +661,8 @@ export const defaultContext = {
             get: async (url, params) => {
                 return await $.ajax({
                     type: "GET",
-                    url: `http://localhost:41815/${url}`
+                    url: `http://localhost:41815/${url}`,
+                    params  // TODO untested
                 })
             }
         },
