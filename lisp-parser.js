@@ -613,9 +613,9 @@ export async function evaluate(tree, context) {
         return []
     }
 
-    let first = tree[0]
-    let rest = tree.slice(1)
-    if (typeof first === "symbol") {
+    let first = tree[0]  // a thing that accepts arguments (function, promise, or macro)
+    let rest = tree.slice(1)  // arguments to first
+    if (typeof first === "symbol") {  // defined in context or builtin
         const builtin = builtins[description(first)]
         if (typeof builtin !== "undefined") {  // first is a builtin
             return builtin(context, rest)
