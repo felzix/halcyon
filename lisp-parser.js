@@ -659,15 +659,15 @@ function hexagon(rest, context) {
 }
 
 function lispApply(first, rest, context) {
-    const rest1 = hexagon(rest, context)
+    rest = hexagon(rest, context)
 
-    if (typeof rest1 === "object" && rest1.constructor === Promise) {
-        return rest1.then(rest2 => {
+    if (typeof rest === "object" && rest.constructor === Promise) {
+        return rest.then(rest => {
             // __lisp_bind allow methods to work at all. note that undefined is the default for apply
-            return first.apply(first.__lisp_bind, rest2)
+            return first.apply(first.__lisp_bind, rest)
         })
     } else {
-        return first.apply(first.__lisp_bind, rest1)
+        return first.apply(first.__lisp_bind, rest)
     }
 }
 
