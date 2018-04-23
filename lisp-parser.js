@@ -633,22 +633,42 @@ export async function evaluate(tree, context) {
         })
     } else if (typeof first === "function") {
         return lispApply(first, rest, context)
-    } else if (typeof first === "object" && first.__isMacro) {
+    } else if (typeof first === "object" && first.__isMacro) {  // TODO not implemented
         throw Error("Macros not yet supported")
     } else {
         throw Error(`First argument in list must be function, Promise, or macro not ${first}`)
     }
 }
 
-async function lispApply(first, rest, context) {
-    rest = await Promise.all(rest.map(x => evaluate(x, context)))
-
-    // __lisp_bind allow methods to work at all. note that undefined is the default for apply
-    let result = first.apply(first.__lisp_bind, rest)
-    if (typeof result === "object" && result.constructor === Promise) {
-        result = await result
+function containsAPromise(arr) {
+    for (let i = 0; i < arr.length; i++) {
+        if (typeof arr[i] === "object" && arr[i].constructor === Promise) {
+            return true
+        }
     }
-    return result
+    return false
+}
+
+function hexagon(rest, context) {
+    rest = rest.map(x => evaluate(x, context))
+    if (containsAPromise(rest)) {
+        return Promise.all(rest)
+    } else {
+        return rest
+    }
+}
+
+function lispApply(first, rest, context) {
+    const rest1 = hexagon(rest, context)
+
+    if (typeof rest1 === "object" && rest1.constructor === Promise) {
+        return rest1.then(rest2 => {
+            // __lisp_bind allow methods to work at all. note that undefined is the default for apply
+            return first.apply(first.__lisp_bind, rest2)
+        })
+    } else {
+        return first.apply(first.__lisp_bind, rest1)
+    }
 }
 
 export function makeInterpreter(globalContext) {
