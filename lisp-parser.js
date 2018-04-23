@@ -628,10 +628,10 @@ export async function evaluate(tree, context) {
     }
 
     if (typeof first === "object" && first.constructor === Promise) {
-        first = await first
-    }
-
-    if (typeof first === "function") {
+        return first.then(fn => {
+            return lispApply(fn, rest, context)
+        })
+    } else if (typeof first === "function") {
         return lispApply(first, rest, context)
     } else if (typeof first === "object" && first.__isMacro) {
         throw Error("Macros not yet supported")
