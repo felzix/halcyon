@@ -58,7 +58,7 @@ export function buildLambda(rest, blockType, context) {
     const params = rest[0].map(p => { return description(p) })
     const justBody = rest.slice(1)
 
-    return async function() {
+    return function() {
         let body = [
             Symbol.for(blockType),
             [
@@ -85,7 +85,7 @@ export function buildLambda(rest, blockType, context) {
         }
 
         body = body.concat(justBody)
-        return await evaluate(body, context)
+        return evaluate(body, context)
     }
 }
 
