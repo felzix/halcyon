@@ -637,7 +637,7 @@ export async function evaluate(tree, context) {
 
         // __lisp_bind allow methods to work at all. note that undefined is the default for apply
         let result = first.apply(first.__lisp_bind, rest)
-        if (typeof result !== "undefined" && result.constructor === Promise) {
+        if (typeof result === "object" && result.constructor === Promise) {
             result = await result
         }
         return result
