@@ -624,7 +624,11 @@ export async function evaluate(tree, context) {
             // TODO throw error if first isn't something?
         }
     } else if (Array.isArray(first)) {  // first is a list; evaluate it before moving on
-        first = await evaluate(first, context)
+        first = evaluate(first, context)
+    }
+
+    if (typeof first === "object" && first.constructor === Promise) {
+        first = await first
     }
 
     switch (typeof first) {
