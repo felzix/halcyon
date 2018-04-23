@@ -93,20 +93,32 @@ function description(symbol) {
     return String(symbol).slice(7, -1) || null
 }
 
+function oathJudge(thing, context, fn) {
+    thing = evaluate(thing, context)
+
+    if (typeof thing === "object" && thing.constructor === Promise) {
+        return thing.then(fn)
+    } else {
+        return fn(thing)
+    }
+}
+
 const builtins = {
-    "if": async (context, rest) => {
+    "if": (context, rest) => {
         if (rest.length < 2 || rest.length > 3) {
             throw new Error("`if` must have 2 or 3 arguments")
         }
         let condition = rest[0]
         let then = rest[1]
         let else_ = rest[2]
-        condition = await evaluate(condition, context)
-        if (condition) {
-            return await evaluate(then, context)
-        } else if (typeof else_ !== "undefined") {
-            return await evaluate(else_, context)
-        }
+
+        return oathJudge(condition, context, condition => {
+            if (condition) {
+                return evaluate(then, context)
+            } else if (typeof else_ !== "undefined") {
+                return evaluate(else_, context)
+            }
+        })
     },
     "or": async (context, rest) => {
         // TODO enable support for [0, inf) arguments
