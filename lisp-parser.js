@@ -109,7 +109,7 @@ const builtins = {
         }
     },
     "or": async (context, rest) => {
-    // TODO enable support for [0, inf) arguments
+        // TODO enable support for [0, inf) arguments
         if (rest.length !== 2) {
             throw new Error("`or` must have exactly 2 argumenst")
         }
@@ -121,7 +121,7 @@ const builtins = {
         return second
     },
     "and": async (context, rest) => {
-    // TODO enable support for [0, inf) arguments
+        // TODO enable support for [0, inf) arguments
         if (rest.length !== 2) {
             throw new Error("`and` must have exactly 2 argumenst")
         }
@@ -598,7 +598,7 @@ export const defaultContext = {
     }
 }
 
-export async function evaluate(tree, context) {
+export function evaluate(tree, context) {
     if (typeof context === "undefined") {
         throw "Function `evaluate` must be called with a context."
     }
