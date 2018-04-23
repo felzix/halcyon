@@ -633,9 +633,7 @@ export async function evaluate(tree, context) {
 
     switch (typeof first) {
     case "function": {
-        for (let i = 0; i < rest.length; i++) {
-            rest[i] = await evaluate(rest[i], context)
-        }
+        rest = await Promise.all(rest.map(x => evaluate(x, context)))
 
         // __lisp_bind allow methods to work at all. note that undefined is the default for apply
         let result = first.apply(first.__lisp_bind, rest)
