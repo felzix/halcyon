@@ -1,4 +1,4 @@
-/* eslint-disable react/display-name, no-console */
+/* eslint-disable react/display-name, no-console, no-constant-condition */
 
 import "babel-polyfill"  // necessary for await/async to work
 import $ from "jquery"
@@ -154,17 +154,26 @@ const builtins = {
             }
         })
     },
-    "while": async (context, rest) => {
+    "while": (context, rest) => {
         if (rest.length !== 2) {
             throw new Error("`while` must have exactly 2 arguments")
         }
         const condition = rest[0]
         const statement = rest[1]
-        let value
-        while (await evaluate(condition, context)) {
-            value = await evaluate(statement, context)
+
+        const whilst = lastValue => {
+            return oathJudge(condition, context, condition => {
+                if (condition) {
+                    return oathJudge(statement, context, value => {
+                        return whilst(value)
+                    })
+                } else {
+                    return lastValue
+                }
+            })
         }
-        return value
+
+        return whilst()
     },
     "each": async (context, rest) => {
         if (rest.length !== 2) {

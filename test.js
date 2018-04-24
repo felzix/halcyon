@@ -186,6 +186,39 @@ test("lisp-parser :: if", async t => {
         undefined)
 })
 
+test("lisp-parser :: while", async t => {
+    t.is(
+        await parseAndEval(`
+            (block!
+                (def x 0)
+                (while (< x 3)
+                    (def x (+ x 1)))
+                x)`),
+        3)
+    t.is(
+        await parseAndEval(`
+            (block!
+                (def foo (lambda (a b)
+                            (< a b)))
+                (def q {"x": 0})
+                (while (foo q.x 5)
+                    (block!
+                        (set q "x" (+ q.x 2))))
+                q.x)`),
+        6)
+    t.is(
+        await parseAndEval(`
+            (block!
+                (def foo (lambda (a b)
+                            (< a b)))
+                (def x 0)
+                (while (foo x 5)
+                    (block!
+                        (def x (+ x 2))))
+                x)`),
+        6)
+})
+
 test("lisp-parser :: quote", async t => {
     await testException(t, "(quote)", [quote], "`quote` must have exactly 1 argument")
     await testParse(t, "(quote ())", [quote, []], [])
