@@ -219,6 +219,16 @@ test("lisp-parser :: while", async t => {
         6)
 })
 
+test("lisp-parser :: each", async t => {
+    t.is(
+        await parseAndEval(`
+            (block!
+                (def arr '(1 2 3 4))
+                (def foo (lambda (x) (* x x)))
+                (each arr foo))`),
+        16)
+})
+
 test("lisp-parser :: quote", async t => {
     await testException(t, "(quote)", [quote], "`quote` must have exactly 1 argument")
     await testParse(t, "(quote ())", [quote, []], [])

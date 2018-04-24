@@ -175,17 +175,24 @@ const builtins = {
 
         return whilst()
     },
-    "each": async (context, rest) => {
+    // TODO decide if this should be kept or modified - it's weird as a builtin
+    "each": (context, rest) => {
         if (rest.length !== 2) {
             throw new Error("`each` must have exactly 2 arguments")
         }
-        const list = await evaluate(rest[0], context)
-        const fn = await evaluate(rest[1], context)
-        let value
-        for (let i = 0; i < list.length; i++) {
-            value = await fn(list[i])
-        }
-        return value
+
+        const list = rest[0]
+        const fn = rest[1]
+
+        return oathJudge(list, context, list => {
+            return oathJudge(fn, context, fn => {
+                let value
+                for (let i = 0; i < list.length; i++) {
+                    value = fn(list[i])
+                }
+                return value
+            })
+        })
     },
     quote: (context, rest) => {
         if (rest.length !== 1) {
