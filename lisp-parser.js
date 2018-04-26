@@ -328,28 +328,31 @@ const builtins = {
         }
         return container
     },
-    load: async (context, rest) => {
+    load: (context, rest) => {
         if (rest.length !== 1 && rest.length !== 2) {
             throw new Error("`load` takes 1 or 2 arguments")
-        } else {
-            const defMapping = rest[0]
-            const targetContext = typeof rest[1] === "undefined"
-                ? context : await evaluate(rest[1], context)
-            const definitions = await evaluate(defMapping, context)
-            const newOlderSister = {
-                uid: `sister-${uuid4()}`,
-                child: targetContext,
-                definitions: targetContext.definitions
-            }
-            if (typeof targetContext.parent !== "undefined") {
-                newOlderSister.parent = targetContext.parent
-                newOlderSister.parent.child = newOlderSister
-            }
-            targetContext.parent = newOlderSister
-            targetContext.definitions = definitions
-
-            return targetContext  // yes, actually returns context to user; TODO read-only
         }
+        const defMapping = rest[0]
+        const targetContext = rest[1]
+
+        return oathJudge(targetContext, context, targetContext => {
+            targetContext = targetContext || context
+            return oathJudge(defMapping, context, definitions => {
+                const newOlderSister = {
+                    uid: `sister-${uuid4()}`,
+                    child: targetContext,
+                    definitions: targetContext.definitions
+                }
+                if (typeof targetContext.parent !== "undefined") {
+                    newOlderSister.parent = targetContext.parent
+                    newOlderSister.parent.child = newOlderSister
+                }
+                targetContext.parent = newOlderSister
+                targetContext.definitions = definitions
+
+                return targetContext  // yes, actually returns context to user; TODO read-only
+            })
+        })
     },
     unload: (context, rest) => {
         if (rest.length !== 1) {
