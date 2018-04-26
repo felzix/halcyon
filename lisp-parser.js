@@ -262,10 +262,22 @@ const builtins = {
         context.child = originalChild
         return finalValue
     },
-    "block!": async (context, rest) => {  // syntactic necessity
+    "block!": (context, rest) => {  // syntactic necessity
         let finalValue
-        for (let i = 0; i < rest.length; i++) {
-            finalValue = await evaluate(rest[i], context)
+        for (var i = 0; i < rest.length; i++) {
+            finalValue = evaluate(rest[i], context)
+            if (typeof finalValue === "object" && finalValue.constructor === Promise) {
+                break
+            }
+        }
+
+        if (i < rest.length) {  // the rest are promises so wrap everything in a promise
+            // promiseSequential operates over functions not Promises
+            const fns = [() => finalValue]
+                .concat(rest.slice(i + 1).map(n => () => evaluate(n, context)))
+            return promiseSequential(fns).then(values => {
+                return values[values.length - 1]
+            })
         }
         return finalValue
     },
