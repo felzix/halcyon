@@ -307,26 +307,37 @@ const builtins = {
             })
         }
     },
-    ".": async (context, rest) => {
+    ".": (context, rest) => {
         if (rest.length < 2) {
             throw new Error("`.` takes at least 2 arguments")
         }
-        let container = await evaluate(rest[0], context)
-        let self = container
+        const self = rest[0]
         const elements = rest.slice(1)
-        for (let i = 0; i < elements.length; i++) {
-            let element = elements[i]
-            if (typeof element === "symbol") {
-                element = description(element)
-            } else {
-                element = await evaluate(element, context)
+
+        return oathJudge(self, context, self => {
+            const container = elements.reduce((container, element) => {
+                if (typeof container === "object" && container.constructor === Promise) {
+                    return container.then(async () => {
+                        if (typeof element === "symbol") {
+                            element = description(element)
+                        } else {
+                            element = await evaluate(element, context)
+                        }
+                        return container[element]
+                    })
+                }
+                if (typeof element === "symbol") {
+                    element = description(element)
+                } else {
+                    element = evaluate(element, context)
+                }
+                return container[element]
+            }, self)
+            if (typeof container === "function") {
+                container.__lisp_bind = self
             }
-            container = container[element]
-        }
-        if (typeof container === "function") {
-            container.__lisp_bind = self
-        }
-        return container
+            return container
+        })
     },
     load: (context, rest) => {
         if (rest.length !== 1 && rest.length !== 2) {
