@@ -29,6 +29,7 @@
     "lispyscript": "^1.0.1",
     "parinfer-codemirror": "^1.4.2",
     "pegjs": "^0.10.0",
+    "promise-sequential": "^1.1.1",
     "react": "^15.6.1",
     "react-bootstrap": "^0.31.3",
     "react-codemirror": "^1.0.0",

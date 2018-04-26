@@ -2,7 +2,7 @@
 
 import "babel-polyfill"  // necessary for await/async to work
 import $ from "jquery"
-
+import promiseSequential from "promise-sequential"
 import React from "react"
 import uuid4 from "uuid"
 import CodeMirror from "react-codemirror"  // TODO refactor away
@@ -229,7 +229,7 @@ const builtins = {
             })
         }
     },
-    block: async (context, rest) => {
+    block: (context, rest) => {
         const blockContext = {
             uid: `block-${uuid4()}`,
             parent: context,
@@ -242,9 +242,23 @@ const builtins = {
         context.child = blockContext
 
         let finalValue
-        for (let i = 0; i < rest.length; i++) {
-            finalValue = await evaluate(rest[i], blockContext)
+        for (var i = 0; i < rest.length; i++) {
+            finalValue = evaluate(rest[i], blockContext)
+            if (typeof finalValue === "object" && finalValue.constructor === Promise) {
+                break
+            }
         }
+
+        if (i < rest.length) {  // the rest are promises so wrap everything in a promise
+            // promiseSequential operates over functions not Promises
+            const fns = [() => finalValue]
+                .concat(rest.slice(i + 1).map(n => () => evaluate(n, blockContext)))
+            return promiseSequential(fns).then(values => {
+                context.child = originalChild
+                return values[values.length - 1]
+            })
+        }
+
         context.child = originalChild
         return finalValue
     },
