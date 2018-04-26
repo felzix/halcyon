@@ -93,10 +93,16 @@ function description(symbol) {
     return String(symbol).slice(7, -1) || null
 }
 
+function isPromise(thing) {
+    return typeof thing === "object" &&
+    thing.constructor === Promise &&
+    !thing.__lisp_promise  // allows intentional promises (those using the builtin "promise")
+}
+
 function oathJudge(thing, context, fn) {
     thing = evaluate(thing, context)
 
-    if (typeof thing === "object" && thing.constructor === Promise) {
+    if (isPromise(thing)) {
         return thing.then(fn)
     } else {
         return fn(thing)
@@ -244,7 +250,7 @@ const builtins = {
         let finalValue
         for (var i = 0; i < rest.length; i++) {
             finalValue = evaluate(rest[i], blockContext)
-            if (typeof finalValue === "object" && finalValue.constructor === Promise) {
+            if (isPromise(finalValue)) {
                 break
             }
         }
@@ -266,7 +272,7 @@ const builtins = {
         let finalValue
         for (var i = 0; i < rest.length; i++) {
             finalValue = evaluate(rest[i], context)
-            if (typeof finalValue === "object" && finalValue.constructor === Promise) {
+            if (isPromise(finalValue)) {
                 break
             }
         }
@@ -316,7 +322,7 @@ const builtins = {
 
         return oathJudge(self, context, self => {
             const container = elements.reduce((container, element) => {
-                if (typeof container === "object" && container.constructor === Promise) {
+                if (isPromise(container)) {
                     return container.then(async () => {
                         if (typeof element === "symbol") {
                             element = description(element)
@@ -338,6 +344,28 @@ const builtins = {
             }
             return container
         })
+    },
+    promise: (context, rest) => {
+        if (rest.length !== 1) {
+            throw new Error("`promise` requires exactly 1 argument")
+        }
+        const thing = rest[0]
+
+        const p = Promise.resolve(evaluate(thing, context))
+        p.__lisp_promise = true
+        return p
+    },
+    "await": (context, rest) => {
+        if (rest.length !== 1) {
+            throw new Error("`await` requires exactly 1 argument")
+        }
+        const thing = rest[0]
+
+        const maybePromise = evaluate(thing, context)
+        if (typeof maybePromise === "object" && maybePromise.constructor === Promise) {
+            delete maybePromise.__lisp_promise
+        }
+        return maybePromise
     },
     load: (context, rest) => {
         if (rest.length !== 1 && rest.length !== 2) {
@@ -673,7 +701,7 @@ export const defaultContext = {
         },
         http: {
             get: async (url, params) => {
-                return await $.ajax({
+                return $.ajax({
                     type: "GET",
                     url: `http://localhost:41815/${url}`,
                     params  // TODO untested
@@ -717,7 +745,7 @@ export function evaluate(tree, context) {
         first = evaluate(first, context)
     }
 
-    if (typeof first === "object" && first.constructor === Promise) {
+    if (isPromise(first)) {
         return first.then(fn => {
             return lispApply(fn, rest, context)
         })
@@ -732,13 +760,16 @@ export function evaluate(tree, context) {
 
 function containsAPromise(arr) {
     for (let i = 0; i < arr.length; i++) {
-        if (typeof arr[i] === "object" && arr[i].constructor === Promise) {
+        if (isPromise(arr[i])) {
             return true
         }
     }
     return false
 }
 
+// NOTE: Parameters are evaluated IN PARALLEL!
+//       The workaround is to evaluate the parameters in the enclosing block.
+//       A macro can be written that wraps functions that need sequential parameters evaluation.
 function hexagon(rest, context) {
     rest = rest.map(x => evaluate(x, context))
     if (containsAPromise(rest)) {
@@ -751,7 +782,7 @@ function hexagon(rest, context) {
 function lispApply(first, rest, context) {
     rest = hexagon(rest, context)
 
-    if (typeof rest === "object" && rest.constructor === Promise) {
+    if (isPromise(rest)) {
         return rest.then(rest => {
             // __lisp_bind allow methods to work at all. note that undefined is the default for apply
             return first.apply(first.__lisp_bind, rest)

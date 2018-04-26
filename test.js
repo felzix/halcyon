@@ -102,6 +102,25 @@ test("lisp-parser :: javascript native", async t => {
     await testParse(t, "(Math.sqrt 4)", [[dot, math, sqrt], 4], Math.sqrt(4))
 })
 
+test("lisp-parser :: promise", async t => {
+    t.is(
+        await parseAndEval(`
+        (type (promise 20))`),
+        "object")
+    t.is(
+        await parseAndEval(`
+        (promise 20)`),
+        20)
+    t.is(
+        await parseAndEval(`
+        (+ 1 (await (promise 20)))`),
+        21)
+    t.is(
+        await parseAndEval(`
+      ((. Math sqrt) (await (promise 25)))`),
+        5)
+})
+
 test("lisp-parser :: very dotty", async t => {
     await testParse(t, "Math.(concat \"sqr\" \"t\")",
         [dot, math, [concat, "sqr", "t"]],
@@ -122,6 +141,10 @@ test("lisp-parser :: very dotty", async t => {
         "(. Math sqrt (concat \"na\" \"me\"))",
         [dot, math, sqrt, [concat, "na", "me"]],
         Math.sqrt.name)
+    t.is(
+        await parseAndEval(`
+      ((. Math sqrt) 25)`),
+        5)
 })
 
 test("lisp-parser :: nested", async t => {
