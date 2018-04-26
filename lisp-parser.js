@@ -351,11 +351,13 @@ const builtins = {
             return targetContext  // yes, actually returns context to user; TODO read-only
         }
     },
-    unload: async (context, rest) => {
+    unload: (context, rest) => {
         if (rest.length !== 1) {
             throw new Error("`unload` takes exactly 1 argument")
-        } else {
-            const contextToUnload = await evaluate(rest[0], context)
+        }
+        const contextToUnload = rest[0]
+
+        return oathJudge(contextToUnload, context, contextToUnload => {
             if (contextToUnload.parent) {
                 contextToUnload.parent.child = contextToUnload.child
             }
@@ -366,7 +368,7 @@ const builtins = {
             if (contextToUnload === context) {  // must have some context so use parent
                 Object.assign(context, contextToUnload.parent)
             }
-        }
+        })
     },
     "throw": (context, rest) => {
         if (rest.length !== 1) {
