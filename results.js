@@ -1,3 +1,5 @@
+/* eslint-disable react/prop-types */
+
 import React from "react"
 if (typeof window !== "undefined") {  // don't load codemirror addons in nodejs
     require("codemirror/addon/edit/matchbrackets")
@@ -171,17 +173,16 @@ export class Editor extends React.Component {
     }
 
     render() {
-        /* jshint ignore:start */
         const dom = (
-            <div onKeyPress={this.handleKeyPress}
-                 onKeyUp={this.handleKeyUp}
-                 onKeyDown={this.handleKeyDown}>
+            <div
+                onKeyPress={this.handleKeyPress}
+                onKeyUp={this.handleKeyUp}
+                onKeyDown={this.handleKeyDown}>
                 <CodeMirror
                     value={this.props.value}
                     options={this.props.options}
                     ref={cm => { this.codeMirror = cm }}/>
             </div>)
-        /* jshint ignore:end */
         return React.createElement(GeneratedElement, { dom })
     }
 }
