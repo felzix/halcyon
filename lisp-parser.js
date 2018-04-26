@@ -310,24 +310,23 @@ const builtins = {
     ".": async (context, rest) => {
         if (rest.length < 2) {
             throw new Error("`.` takes at least 2 arguments")
-        } else {
-            let container = await evaluate(rest[0], context)
-            let self = container
-            const elements = rest.slice(1)
-            for (let i = 0; i < elements.length; i++) {
-                let element = elements[i]
-                if (typeof element === "symbol") {
-                    element = description(element)
-                } else {
-                    element = await evaluate(element, context)
-                }
-                container = container[element]
-            }
-            if (typeof container === "function") {
-                container.__lisp_bind = self
-            }
-            return container
         }
+        let container = await evaluate(rest[0], context)
+        let self = container
+        const elements = rest.slice(1)
+        for (let i = 0; i < elements.length; i++) {
+            let element = elements[i]
+            if (typeof element === "symbol") {
+                element = description(element)
+            } else {
+                element = await evaluate(element, context)
+            }
+            container = container[element]
+        }
+        if (typeof container === "function") {
+            container.__lisp_bind = self
+        }
+        return container
     },
     load: async (context, rest) => {
         if (rest.length !== 1 && rest.length !== 2) {
@@ -375,13 +374,13 @@ const builtins = {
         }
         throw rest[0]
     },
-    "try": async (context, rest) => {
+    "try": (context, rest) => {
         if (rest.length !== 2) {
             throw new Error("`try` must have exactly 2 arguments")
         }
 
         try {
-            return await evaluate(rest[0], context)
+            return evaluate(rest[0], context)
         } catch (err) {
             const tryContext = {
                 uid: `try-${uuid4()}`,
@@ -393,7 +392,7 @@ const builtins = {
             const originalChild = context.child
             context.child = tryContext
 
-            const value = await evaluate(rest[1], tryContext)
+            const value = evaluate(rest[1], tryContext)
             context.child = originalChild
             return value
         }
