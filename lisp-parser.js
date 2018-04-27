@@ -3,8 +3,9 @@
 import "babel-polyfill"  // necessary for await/async to work
 import $ from "jquery"
 import promiseSequential from "promise-sequential"
-import React from "react"
 import uuid4 from "uuid"
+import React from "react"
+import createReactClass from "create-react-class"
 import CodeMirror from "react-codemirror"  // TODO refactor away
 
 import { GeneratedElement, Editor, uploadConfig } from "./results"
@@ -598,6 +599,7 @@ export const defaultContext = {
             }
             return React.createElement(tag, props, ...children)
         },
+        "react-class": createReactClass,
         "vis": (...args) => {
             if (args.length !== 1) {
                 throw new Error("`vis` requires at exactly 1 argument")
