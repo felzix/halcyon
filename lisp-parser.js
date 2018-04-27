@@ -23,9 +23,13 @@ export function parse(string) {
 function evoke(symbol, context) {
     const parent = context.parent
     const definitions = context.definitions
-    const meaning = definitions[description(symbol)]
-    if (typeof meaning !== "undefined") {
-        return meaning
+    const described = description(symbol)
+    const contextualMeaning = definitions[described]
+    const builtinMeaning = builtins[described]
+    if (typeof contextualMeaning !== "undefined") {
+        return contextualMeaning
+    } else if (typeof builtinMeaning !== "undefined") {
+        return builtinMeaning
     } else if (typeof parent !== "undefined") {
         return evoke(symbol, parent)
     } else if (typeof symbol === "string") {
@@ -36,7 +40,7 @@ function evoke(symbol, context) {
         return symbol
     } else if (typeof symbol === "symbol") {
         // javascript
-        return eval(description(symbol))
+        return eval(described)
     } else {
         throw `symbol "${String(symbol)}" has unhandled type "${typeof symbol}"`
     }
@@ -207,6 +211,20 @@ const builtins = {
                     value = fn(list[i])
                 }
                 return value
+            })
+        })
+    },
+    "map": (context, rest) => {
+        if (rest.length !== 2) {
+            throw new Error("`map` must have exactly 2 arguments")
+        }
+
+        const list = rest[0]
+        const fn = rest[1]
+
+        return oathJudge(list, context, list => {
+            return oathJudge(fn, context, fn => {
+                return list.map(fn)
             })
         })
     },
