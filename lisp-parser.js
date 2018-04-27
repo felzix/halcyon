@@ -34,7 +34,7 @@ function evoke(symbol, context) {
     } else if (typeof symbol === "boolean") {
         return symbol
     } else if (typeof symbol === "symbol") {
-    // javascript
+        // javascript
         return eval(description(symbol))
     } else {
         throw `symbol "${String(symbol)}" has unhandled type "${typeof symbol}"`
@@ -68,6 +68,14 @@ export function buildLambda(rest, blockType, context) {
                     Symbol.for("quote"),
                     arguments
                 ]
+            ],
+            [
+                Symbol.for("def"),
+                Symbol.for("this"),
+                [
+                    Symbol.for("quote"),
+                    this
+                ]
             ]
         ]
 
@@ -94,9 +102,10 @@ function description(symbol) {
 }
 
 function isPromise(thing) {
-    return typeof thing === "object" &&
-    thing.constructor === Promise &&
-    !thing.__lisp_promise  // allows intentional promises (those using the builtin "promise")
+    return (thing !== null &&
+            typeof thing === "object" &&
+            thing.constructor === Promise &&
+            !thing.__lisp_promise)  // allows intentional promises (those using the builtin "promise")
 }
 
 function oathJudge(thing, context, fn) {
@@ -241,7 +250,6 @@ const builtins = {
             parent: context,
             definitions: {}
         }
-        blockContext.definitions.this = blockContext
 
         // probably not useful *here* but is consistent with `load`
         const originalChild = context.child
@@ -431,7 +439,6 @@ const builtins = {
                 parent: context,
                 definitions: { err }
             }
-            tryContext.definitions.this = tryContext
             // probably not useful *here* but is consistent with `load`
             const originalChild = context.child
             context.child = tryContext
