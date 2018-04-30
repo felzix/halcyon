@@ -618,7 +618,7 @@ export const defaultContext = {
             return React.createElement(tag, props, ...children)
         },
         "react-class": createReactClass,
-        "vis": (...args) => {
+        "vis": (...args) => {  // TODO obsolete; use react-class
             if (args.length !== 1) {
                 throw new Error("`vis` requires at exactly 1 argument")
             }
