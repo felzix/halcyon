@@ -1,6 +1,6 @@
 import { createStore } from "redux"
 
-import { makeInterpreter, defaultContext } from "./lisp-parser"
+import { makeInterpreter, defaultContext } from "./cyonlisp/lisp-parser"
 import reducer from "./reducer"
 
 

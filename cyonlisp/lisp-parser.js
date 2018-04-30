@@ -8,8 +8,8 @@ import React from "react"
 import createReactClass from "create-react-class"
 import CodeMirror from "react-codemirror"  // TODO refactor away
 
-import { GeneratedElement, Editor, uploadConfig } from "./results"
-import node from "./node"
+import { GeneratedElement, Editor, uploadConfig } from "./../results"
+import node from "./../node"
 
 import parser from "./lisp-grammar"
 

@@ -5,8 +5,8 @@ import { unlink } from "fs"
 import test from "ava"
 import ReactDOMServer from "react-dom/server"
 
-import { parse, evaluate, defaultContext, makeInterpreter } from "./lisp-parser"
-import parseAndEval from "./lisp-parser"
+import { parse, evaluate, defaultContext, makeInterpreter } from "./cyonlisp/lisp-parser"
+import parseAndEval from "./cyonlisp/lisp-parser"
 import { sha256, setNode, getNode, decodeNodeURI, decodeNodeURN, encodeFullNodeURI,
     readJsonFile, writeJsonFile } from "./node"
 
