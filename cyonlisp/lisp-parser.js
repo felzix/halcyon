@@ -282,13 +282,13 @@ const builtins = {
             })
         })
     },
-    quote: (context, rest) => {
+    "quote": (context, rest) => {
         if (rest.length !== 1) {
             throw Error("`quote` must have exactly 1 argument")
         }
         return rest[0]  // don't interpret the rest
     },
-    def: (context, rest) => {
+    "def": (context, rest) => {
         if (rest.length !== 2) {
             throw Error("`def` must have exactly 2 arguments")
         }
@@ -300,7 +300,7 @@ const builtins = {
             return value
         })
     },
-    define: (context, rest) => {
+    "define": (context, rest) => {
         if (rest.length !== 2) {
             throw Error("`define` must have exactly 2 arguments")
         }
@@ -314,7 +314,7 @@ const builtins = {
             })
         })
     },
-    block: (context, rest) => {
+    "block": (context, rest) => {
         const blockContext = {
             uid: `block-${uuid4()}`,
             parent: context,
@@ -366,7 +366,7 @@ const builtins = {
             return finalValue
         }
     },
-    lambda: (context, rest) => {
+    "lambda": (context, rest) => {
         if (rest.length < 2) {
             throw Error("`lambda` must have an arguments list and at least one statement")
         }
@@ -380,7 +380,7 @@ const builtins = {
 
         return buildLambda(rest, "block!", context)  // note the `!`
     },
-    eval: (context, rest) => {
+    "eval": (context, rest) => {
         if (rest.length !== 1) {
             throw Error("`eval` must have exactly 1 argument")
         }
@@ -422,7 +422,7 @@ const builtins = {
             return container
         })
     },
-    promise: (context, rest) => {
+    "promise": (context, rest) => {
         if (rest.length !== 1) {
             throw Error("`promise` requires exactly 1 argument")
         }
@@ -444,7 +444,7 @@ const builtins = {
         }
         return maybePromise
     },
-    load: (context, rest) => {
+    "load": (context, rest) => {
         if (rest.length !== 1 && rest.length !== 2) {
             throw Error("`load` takes 1 or 2 arguments")
         }
@@ -470,7 +470,7 @@ const builtins = {
             })
         })
     },
-    unload: (context, rest) => {
+    "unload": (context, rest) => {
         if (rest.length !== 1) {
             throw Error("`unload` takes exactly 1 argument")
         }
@@ -526,7 +526,7 @@ export const defaultContext = {
     child: undefined,  // written here for later clarity
     definitions: {
     // important language stuff
-        list: (...args) => { return args },
+        "list": (...args) => { return args },
         "type": (...args) => {  // typeof is an operator so it has to be defined here
             if (args.length !== 1) {
                 throw Error("`typeof` takes exactly 1 argument")
@@ -534,7 +534,7 @@ export const defaultContext = {
 
             return typeof args[0]
         },
-        get: (...args) => {
+        "get": (...args) => {
             if (args.length !== 2 && args.length !== 3) {
                 throw Error("`get` requires 2 or 3 arguments")
             }
@@ -553,7 +553,7 @@ export const defaultContext = {
                 return value
             }
         },
-        set: (...args) => {
+        "set": (...args) => {
             if (args.length !== 3) {
                 throw Error("`set` requires 3 arguments")
             }
@@ -564,9 +564,9 @@ export const defaultContext = {
             container[index] = value
             return value
         },
-        append: (...args) => { return [].concat(...args) },
-        concat: (...args) => { return "".concat(...args) },
-        length: (...args) => { return args[0].length },
+        "append": (...args) => { return [].concat(...args) },
+        "concat": (...args) => { return "".concat(...args) },
+        "length": (...args) => { return args[0].length },
         "+": makeArithmetic("+", args => { return args.reduce((x, y) => { return x + y }) }),
         "-": makeArithmetic("-", args => { return -args[0] },
             args => { return args.reduce((x, y) => { return x - y }) }),
@@ -630,7 +630,7 @@ export const defaultContext = {
 
             return left !== right
         },
-        mapping: (...args) => {
+        "mapping": (...args) => {
             if (args.length !== 1) {
                 throw Error("`mapping` takes exactly 1 argument")
             }
@@ -643,14 +643,14 @@ export const defaultContext = {
             }
             return mapping
         },
-        keys: (...args) => {
+        "keys": (...args) => {
             if (args.length !== 1) {
                 throw Error("`keys` takes exactly 1 argument")
             }
 
             return Object.keys(args[0])
         },
-        values: (...args) => {
+        "values": (...args) => {
             if (args.length !== 1) {
                 throw Error("`values` takes exactly 1 argument")
             }
@@ -665,7 +665,7 @@ export const defaultContext = {
             return new args[0](...args.slice(1))
         },
         // awesome stuff
-        react: (...args) => {
+        "react": (...args) => {
             if (args.length === 0) {
                 throw Error("`react` requires at least 1 argument")
             }
@@ -676,7 +676,7 @@ export const defaultContext = {
             return React.createElement(tag, props, ...children)
         },
         "react-class": createReactClass,
-        serialize: (...args) => {
+        "serialize": (...args) => {
             if (args.length !== 1) {
                 throw Error("`serialize` requires exactly 1 argument")
             }
@@ -684,7 +684,7 @@ export const defaultContext = {
 
             return JSON.stringify(thing)
         },
-        unserialize: (...args) => {
+        "unserialize": (...args) => {
             if (args.length !== 1) {
                 throw Error("`unserialize` requires exactly 1 argument")
             }
@@ -692,22 +692,22 @@ export const defaultContext = {
 
             return JSON.parse(string)
         },
-        id: (...args) => {
+        "id": (...args) => {
             if (args.length !== 1) {
                 throw Error("`id` requires exactly 1 argument")
             }
 
             return args[0]
         },
-        uuid: (...args) => {
+        "uuid": (...args) => {
             if (args.length !== 0) {
                 throw Error("`uuid` requires exactly zero arguments")
             }
 
             return uuid4()
         },
-        config: () => { return uploadConfig() },
-        node: async (...args) => {
+        "config": () => { return uploadConfig() },
+        "node": async (...args) => {
             if (args.length !== 1) {
                 throw Error("`node` requires exactly 1 argument")
             }
@@ -728,7 +728,7 @@ export const defaultContext = {
                 console.log(err)  // TODO handle 404s correctly and escalate the rest
             }
         },
-        nodes: async (...args) => {
+        "nodes": async (...args) => {
             if (args.length > 2) {
                 throw Error("`nodes` requires 0 to 2 arguments")
             }
@@ -758,7 +758,7 @@ export const defaultContext = {
             }
             }
         },
-        save: async (...args) => {
+        "save": async (...args) => {
             if (args.length !== 2) {
                 throw Error("`save` requires exactly 2 arguments")
             }
@@ -783,7 +783,7 @@ export const defaultContext = {
                 console.error(err)  // TODO should escalate instead
             }
         },
-        http: {
+        "http": {
             get: async (url, params) => {
                 return $.ajax({
                     type: "GET",
@@ -792,10 +792,10 @@ export const defaultContext = {
                 })
             }
         },
-        log: (...args) => {
+        "log": (...args) => {
             console.log(...args)
         },
-        Editor: Editor,  // TODO this feels wrong,
-        CodeMirror: CodeMirror  // TODO should not be!
+        Editor,  // TODO this feels wrong,
+        CodeMirror  // TODO should not be!
     }
 }
