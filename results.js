@@ -87,13 +87,12 @@ export function text(thing, color) {
     }
 
     /* jshint ignore:start */
-    const dom = (
+    return (
         <pre style={style}>
             {thing}
 
         </pre>)
     /* jshint ignore:end */
-    return React.createElement(GeneratedElement, { dom })
 }
 
 export function uploadConfig() {
@@ -112,13 +111,12 @@ export function uploadConfig() {
         // reader.readAsText(file)
     }
     /* jshint ignore:start */
-    const dom = (
+    return (
         <div>
             Upload JSON config file.
             <input type="file" id="loadConfigFileInput" onChange={onChange}/>
         </div>)
     /* jshint ignore:end */
-    return React.createElement(GeneratedElement, { dom })
 }
 
 export class Editor extends React.Component {
@@ -173,7 +171,7 @@ export class Editor extends React.Component {
     }
 
     render() {
-        const dom = (
+        return (
             <div
                 onKeyPress={this.handleKeyPress}
                 onKeyUp={this.handleKeyUp}
@@ -183,6 +181,5 @@ export class Editor extends React.Component {
                     options={this.props.options}
                     ref={cm => { this.codeMirror = cm }}/>
             </div>)
-        return React.createElement(GeneratedElement, { dom })
     }
 }

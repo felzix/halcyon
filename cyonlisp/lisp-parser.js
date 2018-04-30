@@ -8,16 +8,82 @@ import React from "react"
 import createReactClass from "create-react-class"
 import CodeMirror from "react-codemirror"  // TODO refactor away
 
-import { GeneratedElement, Editor, uploadConfig } from "./../results"
+import { Editor, uploadConfig } from "./../results"
 import node from "./../node"
 
 import parser from "./lisp-grammar"
+import { description, makeArithmetic, isPromise, containsAPromise } from "./util"
 
 
-// Returns a (usually nested) Array of strings
+export default async function(string) {
+    const interpreter = makeInterpreter(defaultContext)
+    return interpreter.eval(string)
+}
+
+export function makeInterpreter(globalContext) {
+    globalContext = copyContext(globalContext)
+    const interpreter = function() {
+        this.globalContext = globalContext
+    }
+
+    interpreter.prototype = {
+        addToContext: function(nameOfThing, thing) {
+            this.globalContext.definitions[nameOfThing] = thing
+        },
+        eval: async function(input) {
+            return await evaluate(parse(input), this.globalContext)
+        }
+    }
+    const inst = new interpreter()
+    inst.addToContext("global", globalContext)
+    return inst
+}
+
 export function parse(string) {
     if (string === "") return
     return parser.parse(string)
+}
+
+export function evaluate(tree, context) {
+    if (typeof context === "undefined") {
+        throw "Function `evaluate` must be called with a context."
+    }
+
+    if (typeof tree === "undefined") {
+        return tree  // nil
+    } else if (tree === null) {
+        return tree  // null
+    } else if (typeof tree !== "object") {
+        return evoke(tree, context)
+    } else if (tree.length === 0){
+        return []
+    }
+
+    let first = tree[0]  // a thing that accepts arguments (function, promise, or macro)
+    let rest = tree.slice(1)  // arguments to first
+    if (typeof first === "symbol") {  // defined in context or builtin
+        const builtin = builtins[description(first)]
+        if (typeof builtin !== "undefined") {  // first is a builtin
+            return builtin(context, rest)
+        } else {  // first is a function
+            first = evoke(first, context)
+            // TODO throw error if first isn't something?
+        }
+    } else if (Array.isArray(first)) {  // first is a list; evaluate it before moving on
+        first = evaluate(first, context)
+    }
+
+    if (isPromise(first)) {
+        return first.then(fn => {
+            return lispApply(fn, rest, context)
+        })
+    } else if (typeof first === "function") {
+        return lispApply(first, rest, context)
+    } else if (typeof first === "object" && first.__isMacro) {  // TODO not implemented
+        throw Error("Macros not yet supported")
+    } else {
+        throw Error(`First argument in list must be function, Promise, or macro not ${first}`)
+    }
 }
 
 function evoke(symbol, context) {
@@ -46,16 +112,19 @@ function evoke(symbol, context) {
     }
 }
 
-function makeArithmetic(symbol, one, many) {
-    many = typeof many === "undefined" ? one : many
-    return function(...args) {
-        if (args.length === 0) {
-            throw new Error("`" + symbol + "` must have at least 1 argument")
-        } else if (args.length === 1) {
-            return one(args)
-        } else {
-            return many(args)
-        }
+function lispApply(first, rest, context) {
+    // NOTE: Parameters are evaluated IN PARALLEL!
+    //       The workaround is to evaluate the parameters in the enclosing block.
+    //       A macro can be written that wraps functions that need sequential parameters evaluation.
+    rest = rest.map(x => evaluate(x, context))
+
+    // __lisp_bind allow methods to work at all. note that undefined is the default for apply
+    if (containsAPromise(rest)) {
+        return Promise.all(rest).then(rest => {
+            return first.apply(first.__lisp_bind, rest)
+        })
+    } else {
+        return first.apply(first.__lisp_bind, rest)
     }
 }
 
@@ -102,18 +171,7 @@ export function buildLambda(rest, blockType, context) {
     }
 }
 
-function description(symbol) {
-    return String(symbol).slice(7, -1) || null
-}
-
-function isPromise(thing) {
-    return (thing !== null &&
-            typeof thing === "object" &&
-            thing.constructor === Promise &&
-            !thing.__lisp_promise)  // allows intentional promises (those using the builtin "promise")
-}
-
-function oathJudge(thing, context, fn) {
+function maybePromise(thing, context, fn) {
     thing = evaluate(thing, context)
 
     if (isPromise(thing)) {
@@ -123,52 +181,50 @@ function oathJudge(thing, context, fn) {
     }
 }
 
+function copyContext(context) {
+    const newContext = Object.assign({ definitions: {} }, context)
+    newContext.definitions = Object.assign({}, newContext.definitions)
+    return newContext
+}
+
 const builtins = {
     "if": (context, rest) => {
         if (rest.length < 2 || rest.length > 3) {
-            throw new Error("`if` must have 2 or 3 arguments")
+            throw Error("`if` must have 2 or 3 arguments")
         }
         let condition = rest[0]
         let then = rest[1]
         let else_ = rest[2]
 
-        return oathJudge(condition, context, condition => {
-            if (condition) {
-                return evaluate(then, context)
-            } else if (typeof else_ !== "undefined") {
-                return evaluate(else_, context)
-            }
+        return maybePromise(condition, context, condition => {
+            return condition ? evaluate(then, context) : evaluate(else_, context)
         })
     },
     "or": (context, rest) => {
         // TODO enable support for [0, inf) arguments
         if (rest.length !== 2) {
-            throw new Error("`or` must have exactly 2 argumenst")
+            throw Error("`or` must have exactly 2 argumenst")
         }
         const left = rest[0]
         const right = rest[1]
 
-        return oathJudge(left, context, left => {
-            if (left) {
-                return left
-            } else {
-                return evaluate(right, context)
-            }
+        return maybePromise(left, context, left => {
+            return left ? left : evaluate(right, context)
         })
     },
     "and": (context, rest) => {
         // TODO enable support for [0, inf) arguments
         if (rest.length !== 2) {
-            throw new Error("`and` must have exactly 2 argumenst")
+            throw Error("`and` must have exactly 2 argumenst")
         }
         const left = rest[0]
         const right = rest[1]
 
-        return oathJudge(left, context, left => {
+        return maybePromise(left, context, left => {
             if (!left) {
                 return left
             } else {
-                return oathJudge(right, context, right => {
+                return maybePromise(right, context, right => {
                     return Boolean(right)
                 })
             }
@@ -176,15 +232,15 @@ const builtins = {
     },
     "while": (context, rest) => {
         if (rest.length !== 2) {
-            throw new Error("`while` must have exactly 2 arguments")
+            throw Error("`while` must have exactly 2 arguments")
         }
         const condition = rest[0]
         const statement = rest[1]
 
         const whilst = lastValue => {
-            return oathJudge(condition, context, condition => {
+            return maybePromise(condition, context, condition => {
                 if (condition) {
-                    return oathJudge(statement, context, value => {
+                    return maybePromise(statement, context, value => {
                         return whilst(value)
                     })
                 } else {
@@ -198,14 +254,13 @@ const builtins = {
     // TODO decide if this should be kept or modified - it's weird as a builtin
     "each": (context, rest) => {
         if (rest.length !== 2) {
-            throw new Error("`each` must have exactly 2 arguments")
+            throw Error("`each` must have exactly 2 arguments")
         }
-
         const list = rest[0]
         const fn = rest[1]
 
-        return oathJudge(list, context, list => {
-            return oathJudge(fn, context, fn => {
+        return maybePromise(list, context, list => {
+            return maybePromise(fn, context, fn => {
                 let value
                 for (let i = 0; i < list.length; i++) {
                     value = fn(list[i])
@@ -216,52 +271,48 @@ const builtins = {
     },
     "map": (context, rest) => {
         if (rest.length !== 2) {
-            throw new Error("`map` must have exactly 2 arguments")
+            throw Error("`map` must have exactly 2 arguments")
         }
-
         const list = rest[0]
         const fn = rest[1]
 
-        return oathJudge(list, context, list => {
-            return oathJudge(fn, context, fn => {
+        return maybePromise(list, context, list => {
+            return maybePromise(fn, context, fn => {
                 return list.map(fn)
             })
         })
     },
     quote: (context, rest) => {
         if (rest.length !== 1) {
-            throw new Error("`quote` must have exactly 1 argument")
-        } else {
-            return rest[0]  // don't interpret the rest
+            throw Error("`quote` must have exactly 1 argument")
         }
+        return rest[0]  // don't interpret the rest
     },
     def: (context, rest) => {
         if (rest.length !== 2) {
-            throw new Error("`def` must have exactly 2 arguments")
-        } else {
-            const symbol = rest[0]
-            const value = rest[1]
-
-            return oathJudge(value, context, value => {
-                context.definitions[description(symbol)] = value
-                return value
-            })
+            throw Error("`def` must have exactly 2 arguments")
         }
+        const symbol = rest[0]
+        const value = rest[1]
+
+        return maybePromise(value, context, value => {
+            context.definitions[description(symbol)] = value
+            return value
+        })
     },
     define: (context, rest) => {
         if (rest.length !== 2) {
-            throw new Error("`def` must have exactly 2 arguments")
-        } else {
-            const symbol = rest[0]
-            const value = rest[1]
-
-            return oathJudge(symbol, context, symbol_string => {
-                return oathJudge(value, context, value => {
-                    context.definitions[symbol_string] = value
-                    return value
-                })
-            })
+            throw Error("`define` must have exactly 2 arguments")
         }
+        const symbol = rest[0]
+        const value = rest[1]
+
+        return maybePromise(symbol, context, symbol_string => {
+            return maybePromise(value, context, value => {
+                context.definitions[symbol_string] = value
+                return value
+            })
+        })
     },
     block: (context, rest) => {
         const blockContext = {
@@ -274,8 +325,8 @@ const builtins = {
         const originalChild = context.child
         context.child = blockContext
 
-        let finalValue
-        for (var i = 0; i < rest.length; i++) {
+        let finalValue, i
+        for (i = 0; i < rest.length; i++) {
             finalValue = evaluate(rest[i], blockContext)
             if (isPromise(finalValue)) {
                 break
@@ -290,10 +341,10 @@ const builtins = {
                 context.child = originalChild
                 return values[values.length - 1]
             })
+        } else {
+            context.child = originalChild
+            return finalValue
         }
-
-        context.child = originalChild
-        return finalValue
     },
     "block!": (context, rest) => {  // syntactic necessity
         let finalValue
@@ -311,61 +362,60 @@ const builtins = {
             return promiseSequential(fns).then(values => {
                 return values[values.length - 1]
             })
+        } else {
+            return finalValue
         }
-        return finalValue
     },
     lambda: (context, rest) => {
         if (rest.length < 2) {
-            throw new Error("`lambda` must have an arguments list and at least one statement")
-        } else {
-            return buildLambda(rest, "block", context)
+            throw Error("`lambda` must have an arguments list and at least one statement")
         }
+
+        return buildLambda(rest, "block", context)
     },
     "lambda!": (context, rest) => {
         if (rest.length < 2) {
-            throw new Error("`lambda` must have an arguments list and at least one statement")
-        } else {
-            return buildLambda(rest, "block!", context)  // note the `!`
+            throw Error("`lambda` must have an arguments list and at least one statement")
         }
+
+        return buildLambda(rest, "block!", context)  // note the `!`
     },
     eval: (context, rest) => {
         if (rest.length !== 1) {
-            throw new Error("`eval` must have exactly 1 argument")
-        } else {
-            const arg = rest[0]
-
-            return oathJudge(arg, context, arg => {
-                const body = `(block! ${arg})`
-                return evaluate(parser.parse(body), context)
-            })
+            throw Error("`eval` must have exactly 1 argument")
         }
+        const arg = rest[0]
+
+        return maybePromise(arg, context, arg => {
+            const body = `(block! ${arg})`
+            return evaluate(parser.parse(body), context)
+        })
     },
     ".": (context, rest) => {
         if (rest.length < 2) {
-            throw new Error("`.` takes at least 2 arguments")
+            throw Error("`.` takes at least 2 arguments")
         }
         const self = rest[0]
         const elements = rest.slice(1)
 
-        return oathJudge(self, context, self => {
-            const container = elements.reduce((container, element) => {
-                if (isPromise(container)) {
-                    return container.then(async () => {
-                        if (typeof element === "symbol") {
-                            element = description(element)
-                        } else {
-                            element = await evaluate(element, context)
-                        }
-                        return container[element]
-                    })
-                }
-                if (typeof element === "symbol") {
-                    element = description(element)
-                } else {
-                    element = evaluate(element, context)
-                }
+        function reducer(container, element) {
+            if (isPromise(container)) {
+                return container.then(async () => {
+                    element = typeof element === "symbol"
+                        ? description(element)
+                        : await evaluate(element, context)
+                    return container[element]
+                })
+            } else {
+                element = typeof element === "symbol"
+                    ? description(element)
+                    : evaluate(element, context)
                 return container[element]
-            }, self)
+            }
+        }
+
+        return maybePromise(self, context, self => {
+            const container = elements.reduce(reducer, self)
             if (typeof container === "function") {
                 container.__lisp_bind = self
             }
@@ -374,7 +424,7 @@ const builtins = {
     },
     promise: (context, rest) => {
         if (rest.length !== 1) {
-            throw new Error("`promise` requires exactly 1 argument")
+            throw Error("`promise` requires exactly 1 argument")
         }
         const thing = rest[0]
 
@@ -384,7 +434,7 @@ const builtins = {
     },
     "await": (context, rest) => {
         if (rest.length !== 1) {
-            throw new Error("`await` requires exactly 1 argument")
+            throw Error("`await` requires exactly 1 argument")
         }
         const thing = rest[0]
 
@@ -396,14 +446,14 @@ const builtins = {
     },
     load: (context, rest) => {
         if (rest.length !== 1 && rest.length !== 2) {
-            throw new Error("`load` takes 1 or 2 arguments")
+            throw Error("`load` takes 1 or 2 arguments")
         }
         const defMapping = rest[0]
         const targetContext = rest[1]
 
-        return oathJudge(targetContext, context, targetContext => {
+        return maybePromise(targetContext, context, targetContext => {
             targetContext = targetContext || context
-            return oathJudge(defMapping, context, definitions => {
+            return maybePromise(defMapping, context, definitions => {
                 const newOlderSister = {
                     uid: `sister-${uuid4()}`,
                     child: targetContext,
@@ -422,11 +472,11 @@ const builtins = {
     },
     unload: (context, rest) => {
         if (rest.length !== 1) {
-            throw new Error("`unload` takes exactly 1 argument")
+            throw Error("`unload` takes exactly 1 argument")
         }
         const contextToUnload = rest[0]
 
-        return oathJudge(contextToUnload, context, contextToUnload => {
+        return maybePromise(contextToUnload, context, contextToUnload => {
             if (contextToUnload.parent) {
                 contextToUnload.parent.child = contextToUnload.child
             }
@@ -441,13 +491,14 @@ const builtins = {
     },
     "throw": (context, rest) => {
         if (rest.length !== 1) {
-            throw new Error("`throw` must have exactly 1 argument")
+            throw Error("`throw` must have exactly 1 argument")
         }
+
         throw rest[0]
     },
     "try": (context, rest) => {
         if (rest.length !== 2) {
-            throw new Error("`try` must have exactly 2 arguments")
+            throw Error("`try` must have exactly 2 arguments")
         }
 
         try {
@@ -475,24 +526,26 @@ export const defaultContext = {
     child: undefined,  // written here for later clarity
     definitions: {
     // important language stuff
-        list: (...args) => { return args },  // could be done in lisp but it's too useful in tests etc
+        list: (...args) => { return args },
         "type": (...args) => {  // typeof is an operator so it has to be defined here
             if (args.length !== 1) {
-                throw new Error("`typeof` takes exactly 1 argument")
+                throw Error("`typeof` takes exactly 1 argument")
             }
+
             return typeof args[0]
         },
         get: (...args) => {
             if (args.length !== 2 && args.length !== 3) {
-                throw new Error("`get` requires 2 or 3 arguments")
+                throw Error("`get` requires 2 or 3 arguments")
             }
             const container = args[0]
             const index = args[1]
             const defaultValue = args[2]
+
             const value = container[index]
             if (typeof value === "undefined") {
                 if (typeof defaultValue === "undefined") {
-                    throw new Error("failed to `get` index " + index)
+                    throw Error("failed to `get` index " + index)
                 } else {
                     return defaultValue
                 }
@@ -502,11 +555,12 @@ export const defaultContext = {
         },
         set: (...args) => {
             if (args.length !== 3) {
-                throw new Error("`set` requires 3 arguments")
+                throw Error("`set` requires 3 arguments")
             }
             const container = args[0]
             const index = args[1]
             const value = args[2]
+
             container[index] = value
             return value
         },
@@ -524,139 +578,141 @@ export const defaultContext = {
         // ex: (> 5 3 1) -> true ; (> 5 1 3) -> false
         ">": (...args) => {
             if (args.length !== 2) {
-                throw new Error("`>` must have exactly 2 arguments")
+                throw Error("`>` must have exactly 2 arguments")
             }
             const left = args[0]
             const right = args[1]
+
             return left > right
         },
         "<": (...args) => {
             if (args.length !== 2) {
-                throw new Error("`<` must have exactly 2 arguments")
+                throw Error("`<` must have exactly 2 arguments")
             }
             const left = args[0]
             const right = args[1]
+
             return left < right
         },
         ">=": (...args) => {
             if (args.length !== 2) {
-                throw new Error("`>=` must have exactly 2 arguments")
+                throw Error("`>=` must have exactly 2 arguments")
             }
             const left = args[0]
             const right = args[1]
+
             return left >= right
         },
         "<=": (...args) => {
             if (args.length !== 2) {
-                throw new Error("`<=` must have exactly 2 arguments")
+                throw Error("`<=` must have exactly 2 arguments")
             }
             const left = args[0]
             const right = args[1]
+
             return left <= right
         },
         "==": (...args) => {
             if (args.length !== 2) {
-                throw new Error("`==` must have exactly 2 arguments")
+                throw Error("`==` must have exactly 2 arguments")
             }
             const left = args[0]
             const right = args[1]
+
             return left === right
         },
         "!=": (...args) => {
             if (args.length !== 2) {
-                throw new Error("`!=` must have exactly 2 arguments")
+                throw Error("`!=` must have exactly 2 arguments")
             }
             const left = args[0]
             const right = args[1]
+
             return left !== right
         },
         mapping: (...args) => {
             if (args.length !== 1) {
-                throw new Error("`mapping` takes exactly 1 argument")
-            } else {
-                const pairs = args[0]
-                const mapping = {}
-                for (let i = 0; i < pairs.length; i++) {
-                    const [key, value] = pairs[i]
-                    mapping[key] = value
-                }
-                return mapping
+                throw Error("`mapping` takes exactly 1 argument")
             }
+            const pairs = args[0]
+
+            const mapping = {}
+            for (let i = 0; i < pairs.length; i++) {
+                const [key, value] = pairs[i]
+                mapping[key] = value
+            }
+            return mapping
         },
         keys: (...args) => {
             if (args.length !== 1) {
-                throw new Error("`keys` takes exactly 1 argument")
+                throw Error("`keys` takes exactly 1 argument")
             }
+
             return Object.keys(args[0])
         },
         values: (...args) => {
             if (args.length !== 1) {
-                throw new Error("`values` takes exactly 1 argument")
+                throw Error("`values` takes exactly 1 argument")
             }
+
             return Object.values(args[0])
         },
         "new": (...args) => {
             if (args.length === 0) {
-                throw new Error("`new` takes at least 1 argument")
+                throw Error("`new` takes at least 1 argument")
             }
+
             return new args[0](...args.slice(1))
         },
         // awesome stuff
         react: (...args) => {
             if (args.length === 0) {
-                throw new Error("`react` requires at least 1 argument")
+                throw Error("`react` requires at least 1 argument")
             }
             const tag = args[0]
             const props = args[1]
+            const children = Array.isArray(args[2]) ? args[2] : args.slice(2)
 
-            let children
-            if (Array.isArray(args[2])) {
-                children = args[2]
-            } else {
-                children = args.slice(2)
-            }
             return React.createElement(tag, props, ...children)
         },
         "react-class": createReactClass,
-        "vis": (...args) => {  // TODO obsolete; use react-class
-            if (args.length !== 1) {
-                throw new Error("`vis` requires at exactly 1 argument")
-            }
-            const dom = args[0]
-            return React.createElement(GeneratedElement, { dom })
-        },
         serialize: (...args) => {
             if (args.length !== 1) {
-                throw new Error("`serialize` requires exactly 1 argument")
+                throw Error("`serialize` requires exactly 1 argument")
             }
             const thing = args[0]
+
             return JSON.stringify(thing)
         },
         unserialize: (...args) => {
             if (args.length !== 1) {
-                throw new Error("`unserialize` requires exactly 1 argument")
+                throw Error("`unserialize` requires exactly 1 argument")
             }
             const string = args[0]
+
             return JSON.parse(string)
         },
         id: (...args) => {
             if (args.length !== 1) {
-                throw new Error("`id` requires exactly 1 argument")
+                throw Error("`id` requires exactly 1 argument")
             }
+
             return args[0]
         },
         uuid: (...args) => {
             if (args.length !== 0) {
-                throw new Error("`uuid` requires exactly zero arguments")
+                throw Error("`uuid` requires exactly zero arguments")
             }
+
             return uuid4()
         },
         config: () => { return uploadConfig() },
         node: async (...args) => {
             if (args.length !== 1) {
-                throw new Error("`node` requires exactly 1 argument")
+                throw Error("`node` requires exactly 1 argument")
             }
             const urn = args[0]
+
             // TODO get defaults from config
             let { owner, name, version } = node.decodeNodeURN(urn, "robert", "unversioned")
             owner = encodeURIComponent(owner)
@@ -674,7 +730,7 @@ export const defaultContext = {
         },
         nodes: async (...args) => {
             if (args.length > 2) {
-                throw new Error("`nodes` requires 0 to 2 arguments")
+                throw Error("`nodes` requires 0 to 2 arguments")
             }
 
             const unwrap = wrapper => {
@@ -704,10 +760,11 @@ export const defaultContext = {
         },
         save: async (...args) => {
             if (args.length !== 2) {
-                throw new Error("`save` requires exactly 2 arguments")
+                throw Error("`save` requires exactly 2 arguments")
             }
             const urn = args[0]
             const data = args[1]
+
             // TODO get defaults from config
             let { owner, name, version } = node.decodeNodeURN(urn, "robert", "unversioned")
             owner = encodeURIComponent(owner)
@@ -741,114 +798,4 @@ export const defaultContext = {
         Editor: Editor,  // TODO this feels wrong,
         CodeMirror: CodeMirror  // TODO should not be!
     }
-}
-
-export function evaluate(tree, context) {
-    if (typeof context === "undefined") {
-        throw "Function `evaluate` must be called with a context."
-    }
-
-    if (typeof tree === "undefined") {
-        return tree  // nil
-    } else if (tree === null) {
-        return tree  // null
-    } else if (typeof tree !== "object") {
-        return evoke(tree, context)
-    } else if (tree.length === 0){
-        return []
-    }
-
-    let first = tree[0]  // a thing that accepts arguments (function, promise, or macro)
-    let rest = tree.slice(1)  // arguments to first
-    if (typeof first === "symbol") {  // defined in context or builtin
-        const builtin = builtins[description(first)]
-        if (typeof builtin !== "undefined") {  // first is a builtin
-            return builtin(context, rest)
-        } else {  // first is a function
-            first = evoke(first, context)
-            // TODO throw error if first isn't something?
-        }
-    } else if (Array.isArray(first)) {  // first is a list; evaluate it before moving on
-        first = evaluate(first, context)
-    }
-
-    if (isPromise(first)) {
-        return first.then(fn => {
-            return lispApply(fn, rest, context)
-        })
-    } else if (typeof first === "function") {
-        return lispApply(first, rest, context)
-    } else if (typeof first === "object" && first.__isMacro) {  // TODO not implemented
-        throw Error("Macros not yet supported")
-    } else {
-        throw Error(`First argument in list must be function, Promise, or macro not ${first}`)
-    }
-}
-
-function containsAPromise(arr) {
-    for (let i = 0; i < arr.length; i++) {
-        if (isPromise(arr[i])) {
-            return true
-        }
-    }
-    return false
-}
-
-// NOTE: Parameters are evaluated IN PARALLEL!
-//       The workaround is to evaluate the parameters in the enclosing block.
-//       A macro can be written that wraps functions that need sequential parameters evaluation.
-function hexagon(rest, context) {
-    rest = rest.map(x => evaluate(x, context))
-    if (containsAPromise(rest)) {
-        return Promise.all(rest)
-    } else {
-        return rest
-    }
-}
-
-function lispApply(first, rest, context) {
-    rest = hexagon(rest, context)
-
-    if (isPromise(rest)) {
-        return rest.then(rest => {
-            // __lisp_bind allow methods to work at all. note that undefined is the default for apply
-            return first.apply(first.__lisp_bind, rest)
-        })
-    } else {
-        return first.apply(first.__lisp_bind, rest)
-    }
-}
-
-export function makeInterpreter(globalContext) {
-    globalContext = copyContext(globalContext)
-    const interpreter = function() {
-        this.globalContext = globalContext
-    }
-
-    interpreter.prototype = {
-        addToContext: function(nameOfThing, thing) {
-            this.globalContext.definitions[nameOfThing] = thing
-        },
-        eval: async function(input) {
-            return await evaluate(parse(input), this.globalContext)
-        }
-    }
-    const inst = new interpreter()
-    inst.addToContext("global", globalContext)
-    return inst
-}
-
-export default async function(string) {
-    const tree = parse(string)
-    if (typeof tree !== "undefined") {
-        const context = copyContext(defaultContext)
-        context.definitions["global"] = context
-        return await evaluate(tree, context)
-    }
-}
-
-function copyContext(context) {
-    const newContext = Object.assign({ definitions: {} }, context)
-    newContext.definitions = Object.assign({}, newContext.definitions)
-    return newContext
 }
