@@ -12,7 +12,7 @@ import { Editor, uploadConfig } from "./../results"
 import node from "./../node"
 
 import parser from "./lisp-grammar"
-import { description, makeArithmetic, isPromise, containsAPromise } from "./util"
+import { description, makeArithmetic, isPromise, containsAPromise, isComment } from "./util"
 
 
 export default async function(string) {
@@ -31,7 +31,10 @@ export function makeInterpreter(globalContext) {
             this.globalContext.definitions[nameOfThing] = thing
         },
         eval: async function(input) {
-            return await evaluate(parse(input), this.globalContext)
+            const result = await evaluate(parse(input), this.globalContext)
+            if (!isComment(result)) {
+                return result
+            }
         }
     }
     const inst = new interpreter()
@@ -53,6 +56,8 @@ export function evaluate(tree, context) {
         return tree  // nil
     } else if (tree === null) {
         return tree  // null
+    } else if (isComment(tree)) {
+        return tree  // don't evaluate comments
     } else if (typeof tree !== "object") {
         return evoke(tree, context)
     } else if (tree.length === 0){
@@ -61,7 +66,9 @@ export function evaluate(tree, context) {
 
     let first = tree[0]  // a thing that accepts arguments (function, promise, or macro)
     let rest = tree.slice(1)  // arguments to first
-    if (typeof first === "symbol") {  // defined in context or builtin
+    if (isComment(first)) {
+        return evaluate(rest, context)  // ignore comments
+    } else if (typeof first === "symbol") {  // defined in context or builtin
         const builtin = builtins[description(first)]
         if (typeof builtin !== "undefined") {  // first is a builtin
             return builtin(context, rest)
@@ -121,9 +128,11 @@ function lispApply(first, rest, context) {
     // __lisp_bind allow methods to work at all. note that undefined is the default for apply
     if (containsAPromise(rest)) {
         return Promise.all(rest).then(rest => {
+            rest = rest.filter(x => !isComment(x))
             return first.apply(first.__lisp_bind, rest)
         })
     } else {
+        rest = rest.filter(x => !isComment(x))
         return first.apply(first.__lisp_bind, rest)
     }
 }

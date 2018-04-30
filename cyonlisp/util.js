@@ -30,3 +30,7 @@ export function containsAPromise(arr) {
     }
     return false
 }
+
+export function isComment(statement) {
+    return typeof statement === "symbol" && description(statement) === "__lisp_comment"
+}

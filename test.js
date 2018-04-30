@@ -80,6 +80,76 @@ test("lisp-parser :: atom", async t => {
     await testParse(t, "\"a \\ b\"", "a \\ b", "a \\ b")
 })
 
+test("lisp-parser :: comment", async t => {
+    t.is(
+        await parseAndEval(`
+            (block
+                /* this is a comment */
+                4)`),
+        4)
+    t.is(
+        await parseAndEval(`
+            (+ 5
+               /* this is a comment */
+               4)`),
+        9)
+    t.is(
+        await parseAndEval(`
+            /* this is a comment */`),
+        undefined)
+    t.deepEqual(
+        await parseAndEval(`
+            (/* this is a comment */)`),
+        [])
+    t.deepEqual(
+        await parseAndEval(`
+            ()`),
+        [])
+    t.deepEqual(
+        await parseAndEval(`
+            (
+             /* this is a comment */
+             + 1 2
+         )`),
+        3)
+    t.deepEqual(
+        await parseAndEval(`
+            (
+             /* this is a comment * */
+             + 1 2
+         )`),
+        3)
+    t.deepEqual(
+        await parseAndEval(`
+            (
+             /* this is a comment \\*\\/ */
+             + 1 2
+         )`),
+        3)
+    t.deepEqual(
+        await parseAndEval(`
+            (
+             /* this is a comment *\\/ */
+             + 1 2
+         )`),
+        3)
+    t.deepEqual(
+        await parseAndEval(`
+            (
+             /* this is a comment \\*\\/ */
+             + 1 2
+         )`),
+        3)
+    t.deepEqual(
+        await parseAndEval(`
+            (
+             /* this is a comment
+              * bro */
+             + 1 2
+         )`),
+        3)
+})
+
 test("lisp-parser :: arithmetic", async t => {
     await testException(t, "(+)", [add], "`+` must have at least 1 argument")
     await testParse(t, "(+ 5)", [add, 5], 5)

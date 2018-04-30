@@ -4,16 +4,28 @@ import { generate } from "pegjs"
 const grammar = `
 {
   function log(thing) {
-    f(thing)
+    console.log(thing)
   }
 }
 
+
 sexpr
-  = _ d:dotty _ { return d }
+  = _ comment _ { return Symbol.for("__lisp_comment") }
+  / _ d:dotty _ { return d }
   / _ a:atom _ { return a }
   / _ s:shorthandQuote _ { return s }
   / _ l:list _  { return l }
   / _ m:mapping _ { return m }
+
+comment
+  = "/*" commented* "*/"
+
+commented
+  = [^*]
+  / "\\\\*"
+  / "*" [^/]
+  / "*\\\\/"
+  / "*" [^/]
 
 atom
   = float
