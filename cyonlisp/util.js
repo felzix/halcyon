@@ -2,8 +2,17 @@ export function makeArithmetic(symbol, one, many) {
     many = typeof many === "undefined" ? one : many
     return function(...args) {
         if (args.length === 0) {
-            throw new Error("`" + symbol + "` must have at least 1 argument")
-        } else if (args.length === 1) {
+            throw Error(`\`${symbol}\` must have at least 1 argument`)
+        }
+
+        for (let i = 0; i < args.length; i++) {
+            const arg = args[i]
+            if (typeof arg !== "number") {
+                throw Error(`\`${symbol}\` only operates on numbers not ${typeof arg}s`)
+            }
+        }
+
+        if (args.length === 1) {
             return one(args)
         } else {
             return many(args)

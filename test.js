@@ -478,6 +478,7 @@ test("lisp-parser :: lambda!", async t => {
 })
 
 test("lisp-parser :: lambda wrong args", async t => {
+    // `y` is null; 8 * null is invalid
     await testException(t, `
     (block
       (def m (lambda (x y) (* x y)))
@@ -485,7 +486,7 @@ test("lisp-parser :: lambda wrong args", async t => {
     [block,
         [def, m, [lambda, [x, y], [multiply, x, y]]],
         [m, 8]],
-    "y is not defined")
+    "`*` only operates on numbers not objects")
 })
 
 test("lisp-parser :: closure", async t => {
@@ -533,6 +534,25 @@ test("lisp-parser :: html", async t => {
     div = await parseAndEval("(react \"div\" undefined \"stuff and <br/> stuff\")")
     t.is(ReactDOMServer.renderToStaticMarkup(div),
         "<div>stuff and &lt;br/&gt; stuff</div>")
+})
+
+test("lisp-parser :: nil and null", async t => {
+    t.is(await parseAndEval(`
+        nil`),
+    undefined)
+    t.is(await parseAndEval(`
+        undefined`),
+    undefined)
+    t.is(await parseAndEval(`
+        (block
+            (def foo (lambda (x) x))
+            (foo nil))`),
+    null)
+    t.is(await parseAndEval(`
+        (block
+            (def foo (lambda (x) x))
+            (foo))`),
+    null)
 })
 
 // TODO cannot do ajax in nodejs, where the test runs

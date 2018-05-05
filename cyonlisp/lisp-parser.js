@@ -164,7 +164,8 @@ export function buildLambda(rest, blockType, context) {
 
         for (let i = 0; i < params.length; i++) {
             const param = params[i]
-            const arg = arguments[i]
+            const arg = typeof arguments[i] === "undefined" ? null : arguments[i]
+
             body.push([
                 Symbol.for("def"),
                 Symbol.for(param),
@@ -463,6 +464,9 @@ const builtins = {
         return maybePromise(targetContext, context, targetContext => {
             targetContext = targetContext || context
             return maybePromise(defMapping, context, definitions => {
+                if (typeof definitions !== "object") {
+                    throw Error(`The first argument to \`load\` must be a mapping not ${typeof definitions}`)
+                }
                 const newOlderSister = {
                     uid: `sister-${uuid4()}`,
                     child: targetContext,
@@ -510,8 +514,11 @@ const builtins = {
             throw Error("`try` must have exactly 2 arguments")
         }
 
+        const toExecute = rest[0]
+        const catchExecute = rest[1]
+
         try {
-            return evaluate(rest[0], context)
+            return evaluate(toExecute, context)
         } catch (err) {
             const tryContext = {
                 uid: `try-${uuid4()}`,
@@ -522,7 +529,7 @@ const builtins = {
             const originalChild = context.child
             context.child = tryContext
 
-            const value = evaluate(rest[1], tryContext)
+            const value = evaluate(catchExecute, tryContext)
             context.child = originalChild
             return value
         }
@@ -576,11 +583,15 @@ export const defaultContext = {
         "append": (...args) => { return [].concat(...args) },
         "concat": (...args) => { return "".concat(...args) },
         "length": (...args) => { return args[0].length },
-        "+": makeArithmetic("+", args => { return args.reduce((x, y) => { return x + y }) }),
-        "-": makeArithmetic("-", args => { return -args[0] },
+        "+": makeArithmetic("+",
+            args => { return args.reduce((x, y) => { return x + y }) }),
+        "-": makeArithmetic("-",
+            args => { return -args[0] },
             args => { return args.reduce((x, y) => { return x - y }) }),
-        "*": makeArithmetic("*", args => { return args.reduce((x, y) => { return x * y }) }),
-        "/": makeArithmetic("/", args => { return 1 / args[0] },
+        "*": makeArithmetic("*",
+            args => { return args.reduce((x, y) => { return x * y }) }),
+        "/": makeArithmetic("/",
+            args => { return 1 / args[0] },
             args => { return args.reduce((x, y) => { return x / y }) }),
         "not": (...args) => { return ! args[0] },
         // TODO make comparisons accept many inputs. true if chaining is 100% correct

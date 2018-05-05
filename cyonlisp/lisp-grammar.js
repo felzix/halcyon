@@ -73,6 +73,7 @@ boolean
 
 nil
   = "nil" { return undefined }
+  / "undefined" { return undefined }
 
 null
   = "null" { return null }
