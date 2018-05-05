@@ -43,3 +43,14 @@ export function containsAPromise(arr) {
 export function isComment(statement) {
     return typeof statement === "symbol" && description(statement) === "__lisp_comment"
 }
+
+export function validJavascriptSymbol(string) {
+    const lispButNotJavascript = ":;!?><=+*/-"
+    for (let i = 0; i < lispButNotJavascript.length; i++) {
+        const char = lispButNotJavascript[i]
+        if (string.includes(char)) {
+            return false
+        }
+    }
+    return true
+}

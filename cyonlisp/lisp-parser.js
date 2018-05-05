@@ -12,7 +12,7 @@ import { Editor, uploadConfig } from "./../results"
 import node from "./../node"
 
 import parser from "./lisp-grammar"
-import { description, makeArithmetic, isPromise, containsAPromise, isComment } from "./util"
+import { description, makeArithmetic, isPromise, containsAPromise, isComment, validJavascriptSymbol } from "./util"
 
 
 export default async function(string) {
@@ -115,6 +115,8 @@ function evoke(symbol, context) {
         return symbol
     } else if (typeof symbol === "boolean") {
         return symbol
+    } else if (typeof symbol === "symbol" && !validJavascriptSymbol(described)) {
+        throw ReferenceError(`${described} is not defined`)
     } else if (typeof symbol === "symbol") {
         // javascript
         return eval(described)
