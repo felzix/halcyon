@@ -103,6 +103,10 @@ function evoke(symbol, context) {
         return contextualMeaning
     } else if (typeof builtinMeaning !== "undefined") {
         return builtinMeaning
+    } else if (described === "nil" || described === "undefined") {
+        return undefined
+    } else if (described === "null") {
+        return null
     } else if (typeof parent !== "undefined") {
         return evoke(symbol, parent)
     } else if (typeof symbol === "string") {
@@ -164,7 +168,7 @@ export function buildLambda(rest, blockType, context) {
 
         for (let i = 0; i < params.length; i++) {
             const param = params[i]
-            const arg = typeof arguments[i] === "undefined" ? null : arguments[i]
+            const arg = typeof arguments[i] === "undefined" ? null : arguments[i]  // default=null
 
             body.push([
                 Symbol.for("def"),
@@ -330,6 +334,7 @@ const builtins = {
             parent: context,
             definitions: {}
         }
+        blockContext.definitions.context = blockContext
 
         // probably not useful *here* but is consistent with `load`
         const originalChild = context.child
@@ -463,6 +468,7 @@ const builtins = {
 
         return maybePromise(targetContext, context, targetContext => {
             targetContext = targetContext || context
+
             return maybePromise(defMapping, context, definitions => {
                 if (typeof definitions !== "object") {
                     throw Error(`The first argument to \`load\` must be a mapping not ${typeof definitions}`)

@@ -31,8 +31,6 @@ atom
   = float
   / integer
   / boolean
-  / nil
-  / null
   / string
   / symbol
   / "." { return Symbol.for(".") }
@@ -70,13 +68,6 @@ integer
 boolean
   = "true" { return true }
   / "false" { return false }
-
-nil
-  = "nil" { return undefined }
-  / "undefined" { return undefined }
-
-null
-  = "null" { return null }
 
 string
   = '"' q:quoted* '"' { return q.join('') }
